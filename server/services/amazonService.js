@@ -1,4 +1,5 @@
-const SellingPartnerAPI = require('amazon-sp-api');
+const https = require('https');
+const querystring = require('querystring');
 const secureLogger = require('../utils/secureLogger');
 
 class AmazonService {
@@ -16,21 +17,88 @@ class AmazonService {
     this.sellerId = creds.sellerId;
     this.marketplaceId = creds.marketplaceId || 'A2Q3Y263D00KWC'; // Brasil
 
-    try {
-      this.sellingPartner = new SellingPartnerAPI({
-        region: 'na',
-        refresh_token: creds.refreshToken,
-        credentials: {
-          SELLING_PARTNER_APP_CLIENT_ID: creds.clientId,
-          SELLING_PARTNER_APP_CLIENT_SECRET: creds.clientSecret,
-          AWS_ACCESS_KEY_ID: creds.awsAccessKey || process.env.AWS_SELLING_PARTNER_ACCESS_KEY_ID,
-          AWS_SECRET_ACCESS_KEY: creds.awsSecretKey || process.env.AWS_SELLING_PARTNER_SECRET_ACCESS_KEY
-        }
-      });
-    } catch (error) {
-      secureLogger.error('Erro ao inicializar Amazon SP-API', { error: error.message });
-      throw error;
+    // Para usar a nova API da Amazon sem AWS keys
+    this.credentials = creds;
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  async getAccessToken() {
+    // Usar token em cache se ainda válido
+    if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
+      return this.accessToken;
     }
+
+    return new Promise((resolve, reject) => {
+      const postData = querystring.stringify({
+        grant_type: 'refresh_token',
+        refresh_token: this.credentials.refreshToken,
+        client_id: this.credentials.clientId,
+        client_secret: this.credentials.clientSecret
+      });
+
+      const options = {
+        hostname: 'api.amazon.com',
+        port: 443,
+        path: '/auth/o2/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            const response = JSON.parse(data);
+            this.accessToken = response.access_token;
+            this.tokenExpiry = new Date(Date.now() + (response.expires_in * 1000) - 60000);
+            resolve(response.access_token);
+          } else {
+            reject(new Error(`Token error: ${res.statusCode}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  async callSPAPI(path, method = 'GET') {
+    const accessToken = await this.getAccessToken();
+    
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'sellingpartnerapi-na.amazon.com',
+        port: 443,
+        path: path,
+        method: method,
+        headers: {
+          'x-amz-access-token': accessToken,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            resolve(JSON.parse(data));
+          } else {
+            reject(new Error(`API error: ${res.statusCode} - ${data}`));
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.end();
+    });
   }
 
   async getOrders(startDate = null) {
@@ -38,24 +106,16 @@ class AmazonService {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const params = {
-        MarketplaceIds: [this.marketplaceId],
-        CreatedAfter: startDate || yesterday.toISOString(),
-        MaxResultsPerPage: 100
-      };
+      const createdAfter = startDate || yesterday.toISOString();
+      const path = `/orders/v0/orders?MarketplaceIds=${this.marketplaceId}&CreatedAfter=${createdAfter}`;
 
       secureLogger.info('Buscando pedidos Amazon', { 
         marketplace: this.marketplaceId,
-        createdAfter: params.CreatedAfter 
+        createdAfter: createdAfter 
       });
 
-      const ordersResponse = await this.sellingPartner.callAPI({
-        operation: 'getOrders',
-        endpoint: 'orders',
-        query: params
-      });
-
-      const orders = ordersResponse.Orders || [];
+      const response = await this.callSPAPI(path);
+      const orders = response.payload?.Orders || [];
       
       secureLogger.info('Pedidos Amazon recuperados', { 
         count: orders.length 
@@ -64,8 +124,7 @@ class AmazonService {
       return orders;
     } catch (error) {
       secureLogger.error('Erro ao buscar pedidos Amazon', { 
-        error: error.message,
-        code: error.code 
+        error: error.message
       });
       return [];
     }
@@ -73,13 +132,9 @@ class AmazonService {
 
   async getOrderItems(orderId) {
     try {
-      const response = await this.sellingPartner.callAPI({
-        operation: 'getOrderItems',
-        endpoint: 'orders',
-        path: `/${orderId}/orderItems`
-      });
-
-      return response.OrderItems || [];
+      const path = `/orders/v0/orders/${orderId}/orderItems`;
+      const response = await this.callSPAPI(path);
+      return response.payload?.OrderItems || [];
     } catch (error) {
       secureLogger.error('Erro ao buscar itens do pedido', { 
         orderId,
@@ -91,50 +146,21 @@ class AmazonService {
 
   async getProductsCatalog() {
     try {
-      // Primeiro busca o inventário FBA
-      const inventoryResponse = await this.sellingPartner.callAPI({
-        operation: 'getInventorySummaries',
-        endpoint: 'fbaInventory',
-        query: {
-          MarketplaceIds: [this.marketplaceId],
-          details: true
-        }
-      });
-
-      const inventory = inventoryResponse.InventorySummaries || [];
-      const products = [];
-
-      // Para cada item do inventário, busca detalhes do produto
-      for (const item of inventory.slice(0, 10)) { // Limita a 10 para não sobrecarregar
-        try {
-          const catalogResponse = await this.sellingPartner.callAPI({
-            operation: 'getCatalogItem',
-            endpoint: 'catalogItems',
-            path: `/${item.asin}`,
-            query: {
-              MarketplaceIds: [this.marketplaceId]
-            }
-          });
-
-          if (catalogResponse) {
-            products.push({
-              ASIN: item.asin,
-              SellerSKU: item.sellerSku,
-              ProductName: catalogResponse.AttributeSets?.[0]?.Title || 'Produto Amazon',
-              Price: catalogResponse.AttributeSets?.[0]?.ListPrice?.Amount || 0,
-              SmallImage: catalogResponse.AttributeSets?.[0]?.SmallImage,
-              InStockSupplyQuantity: item.totalQuantity || 0,
-              QuantitySold: 0, // Seria necessário calcular baseado em pedidos
-              Revenue: 0 // Seria necessário calcular baseado em pedidos
-            });
-          }
-        } catch (error) {
-          secureLogger.error('Erro ao buscar detalhes do produto', { 
-            asin: item.asin,
-            error: error.message 
-          });
-        }
-      }
+      // Busca inventário FBA
+      const inventoryPath = `/fba/inventory/v1/summaries?marketplaceIds=${this.marketplaceId}&details=true&granularityType=Marketplace&granularityId=${this.marketplaceId}`;
+      const inventoryResponse = await this.callSPAPI(inventoryPath);
+      const inventory = inventoryResponse.payload?.inventorySummaries || [];
+      
+      const products = inventory.slice(0, 10).map((item, index) => ({
+        ASIN: item.asin,
+        SellerSKU: item.fnSku || item.sku,
+        ProductName: `Produto Amazon ${item.asin || index + 1}`,
+        Price: 0,
+        SmallImage: null,
+        InStockSupplyQuantity: item.totalQuantity || 0,
+        QuantitySold: 0,
+        Revenue: 0
+      }));
 
       secureLogger.info('Produtos Amazon recuperados', { 
         count: products.length 
@@ -189,15 +215,12 @@ class AmazonService {
 
   async testConnection() {
     try {
-      // Tenta uma operação simples para verificar as credenciais
-      const response = await this.sellingPartner.callAPI({
-        operation: 'getMarketplaceParticipations',
-        endpoint: 'sellers'
-      });
+      const path = '/sellers/v1/marketplaceParticipations';
+      const response = await this.callSPAPI(path);
       
       return {
         success: true,
-        marketplaces: response.length || 0
+        marketplaces: response.payload?.length || 0
       };
     } catch (error) {
       return {

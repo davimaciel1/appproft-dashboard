@@ -4,14 +4,16 @@ function getAmazonService() {
   if (process.env.USE_MOCK_DATA === 'true') {
     return null;
   }
-  return require('./amazonService');
+  const AmazonService = require('./amazonService');
+  return new AmazonService();
 }
 
 function getMercadoLivreService() {
   if (process.env.USE_MOCK_DATA === 'true') {
     return null;
   }
-  return require('./mercadolivreService');
+  const MercadoLivreService = require('./mercadolivreService');
+  return new MercadoLivreService();
 }
 
 class DataService {

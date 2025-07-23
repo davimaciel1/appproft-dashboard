@@ -15,22 +15,28 @@ router.use('/amazon', amazonCallbackRouter);
 router.get('/', async (req, res) => {
   try {
     const userId = req.userId;
+    const pool = require('../db/pool');
     
-    const [amazonCreds, mlCreds] = await Promise.all([
-      credentialsService.getCredentials(userId, 'amazon'),
-      credentialsService.getCredentials(userId, 'mercadolivre')
-    ]);
+    // Buscar diretamente do banco
+    const result = await pool.query(
+      'SELECT marketplace, client_id, seller_id, marketplace_id, refresh_token FROM marketplace_credentials WHERE user_id = $1',
+      [userId]
+    );
+    
+    // Processar resultados
+    const amazonRow = result.rows.find(r => r.marketplace === 'amazon');
+    const mlRow = result.rows.find(r => r.marketplace === 'mercadolivre');
     
     // Retorna apenas informações não sensíveis
     const credentials = {
       amazon: {
-        configured: !!amazonCreds,
-        sellerId: amazonCreds?.sellerId || null,
-        marketplaceId: amazonCreds?.marketplaceId || null
+        configured: !!(amazonRow && amazonRow.client_id && amazonRow.refresh_token),
+        sellerId: amazonRow?.seller_id || null,
+        marketplaceId: amazonRow?.marketplace_id || null
       },
       mercadolivre: {
-        configured: !!mlCreds,
-        sellerId: mlCreds?.sellerId || null
+        configured: !!(mlRow && mlRow.client_id && mlRow.refresh_token),
+        sellerId: mlRow?.seller_id || null
       }
     };
     

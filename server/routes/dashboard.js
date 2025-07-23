@@ -39,8 +39,26 @@ router.get('/metrics', async (req, res) => {
 
 async function getAmazonMetrics(userId) {
   try {
-    // Busca credenciais do usuário
-    const credentials = await credentialsService.getCredentials(userId, 'amazon');
+    // Busca credenciais do usuário diretamente do banco
+    const pool = require('../db/pool');
+    const result = await pool.query(
+      'SELECT * FROM marketplace_credentials WHERE user_id = $1 AND marketplace = $2',
+      [userId, 'amazon']
+    );
+    
+    if (result.rows.length === 0) {
+      throw new Error('Credenciais Amazon não encontradas');
+    }
+    
+    const row = result.rows[0];
+    const credentials = {
+      clientId: row.client_id,
+      clientSecret: row.client_secret,
+      refreshToken: row.refresh_token,
+      sellerId: row.seller_id,
+      marketplaceId: row.marketplace_id || 'ATVPDKIKX0DER'
+    };
+    
     const amazonService = new AmazonService(credentials);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -157,7 +175,26 @@ router.get('/products', async (req, res) => {
 
 async function getAmazonProducts(userId) {
   try {
-    const credentials = await credentialsService.getCredentials(userId, 'amazon');
+    // Busca credenciais do usuário diretamente do banco
+    const pool = require('../db/pool');
+    const result = await pool.query(
+      'SELECT * FROM marketplace_credentials WHERE user_id = $1 AND marketplace = $2',
+      [userId, 'amazon']
+    );
+    
+    if (result.rows.length === 0) {
+      throw new Error('Credenciais Amazon não encontradas');
+    }
+    
+    const row = result.rows[0];
+    const credentials = {
+      clientId: row.client_id,
+      clientSecret: row.client_secret,
+      refreshToken: row.refresh_token,
+      sellerId: row.seller_id,
+      marketplaceId: row.marketplace_id || 'ATVPDKIKX0DER'
+    };
+    
     const amazonService = new AmazonService(credentials);
     const amazonProducts = await amazonService.getProductsCatalog();
   
