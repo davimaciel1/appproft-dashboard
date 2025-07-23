@@ -10,8 +10,7 @@ interface AmazonForm {
   clientId: string;
   clientSecret: string;
   refreshToken: string;
-  sellerId: string;
-  marketplaceId: string;
+  marketplaceCode: string; // BR, US, UK, etc.
 }
 
 interface MlForm {
@@ -19,7 +18,6 @@ interface MlForm {
   clientSecret: string;
   refreshToken: string;
   accessToken: string;
-  sellerId: string;
 }
 
 interface Message {
@@ -40,9 +38,24 @@ const CredentialsConfig: React.FC = () => {
     clientId: '',
     clientSecret: '',
     refreshToken: '',
-    sellerId: '',
-    marketplaceId: 'A2Q3Y263D00KWC'
+    marketplaceCode: 'BR' // Brasil como padrão
   });
+  
+  // Lista de marketplaces disponíveis
+  const marketplaces = [
+    { code: 'BR', name: 'Brasil' },
+    { code: 'US', name: 'Estados Unidos' },
+    { code: 'CA', name: 'Canadá' },
+    { code: 'MX', name: 'México' },
+    { code: 'UK', name: 'Reino Unido' },
+    { code: 'DE', name: 'Alemanha' },
+    { code: 'FR', name: 'França' },
+    { code: 'IT', name: 'Itália' },
+    { code: 'ES', name: 'Espanha' },
+    { code: 'JP', name: 'Japão' },
+    { code: 'AU', name: 'Austrália' },
+    { code: 'SG', name: 'Singapura' }
+  ];
   
   const [authorizationStep, setAuthorizationStep] = useState<'initial' | 'waiting' | 'completed'>('initial');
   const [authorizationUrl, setAuthorizationUrl] = useState<string>('');
@@ -52,8 +65,7 @@ const CredentialsConfig: React.FC = () => {
     clientId: '',
     clientSecret: '',
     refreshToken: '',
-    accessToken: '',
-    sellerId: ''
+    accessToken: ''
   });
   
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -142,14 +154,7 @@ const CredentialsConfig: React.FC = () => {
       setMessage({ type: 'success', text: response.data.message });
       fetchCredentialsStatus();
       
-      // Limpar formulário após sucesso
-      setMlForm({
-        clientId: '',
-        clientSecret: '',
-        refreshToken: '',
-        accessToken: '',
-        sellerId: ''
-      });
+      // Manter o formulário preenchido para permitir atualizações
     } catch (error: any) {
       setMessage({ 
         type: 'error', 
@@ -193,25 +198,32 @@ const CredentialsConfig: React.FC = () => {
       return;
     }
 
-    const marketplaceUrls: Record<string, string> = {
-      'A2Q3Y263D00KWC': 'https://sellercentral.amazon.com.br', // Brasil
-      'ATVPDKIKX0DER': 'https://sellercentral.amazon.com',    // EUA
-      'A1F83G8C2ARO7P': 'https://sellercentral.amazon.co.uk',  // Reino Unido
-      'A1PA6795UKMFR9': 'https://sellercentral.amazon.de',     // Alemanha
-      'A13V1IB3VIYZZH': 'https://sellercentral.amazon.fr',     // França
-      'APJ6JRA9NG5V4': 'https://sellercentral.amazon.it',      // Itália
-      'A1RKKUPIHCS9HS': 'https://sellercentral.amazon.es'      // Espanha
+    // Mapeamento simplificado de URLs de autorização
+    const authUrls: Record<string, string> = {
+      'BR': 'https://sellercentral.amazon.com.br',
+      'US': 'https://sellercentral.amazon.com',
+      'CA': 'https://sellercentral.amazon.ca',
+      'MX': 'https://sellercentral.amazon.com.mx',
+      'UK': 'https://sellercentral.amazon.co.uk',
+      'DE': 'https://sellercentral.amazon.de',
+      'FR': 'https://sellercentral.amazon.fr',
+      'IT': 'https://sellercentral.amazon.it',
+      'ES': 'https://sellercentral.amazon.es',
+      'JP': 'https://sellercentral.amazon.co.jp',
+      'AU': 'https://sellercentral.amazon.com.au',
+      'SG': 'https://sellercentral.amazon.sg'
     };
 
-    const baseUrl = marketplaceUrls[amazonForm.marketplaceId] || marketplaceUrls['A2Q3Y263D00KWC'];
-    const state = `appproft_${Date.now()}`;
+    const baseUrl = authUrls[amazonForm.marketplaceCode] || authUrls['BR'];
+    const state = `appproft_${Date.now()}_${amazonForm.marketplaceCode}`;
     const url = `${baseUrl}/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&version=beta`;
     
     setAuthorizationUrl(url);
     setAuthorizationStep('waiting');
     
-    // Salvar state no localStorage para validar depois
+    // Salvar state e marketplace no localStorage
     localStorage.setItem('amazon_auth_state', state);
+    localStorage.setItem('amazon_auth_marketplace', amazonForm.marketplaceCode);
     
     // Abrir URL em nova aba
     window.open(url, '_blank');
@@ -427,32 +439,25 @@ const CredentialsConfig: React.FC = () => {
                 )}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Seller ID
-                  </label>
-                  <input
-                    type="text"
-                    value={amazonForm.sellerId}
-                    onChange={(e) => setAmazonForm({ ...amazonForm, sellerId: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Marketplace ID
-                  </label>
-                  <input
-                    type="text"
-                    value={amazonForm.marketplaceId}
-                    onChange={(e) => setAmazonForm({ ...amazonForm, marketplaceId: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  País/Região do Marketplace
+                </label>
+                <select
+                  value={amazonForm.marketplaceCode}
+                  onChange={(e) => setAmazonForm({ ...amazonForm, marketplaceCode: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                >
+                  {marketplaces.map(mp => (
+                    <option key={mp.code} value={mp.code}>
+                      {mp.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Selecione o país onde você vende na Amazon
+                </p>
               </div>
               
               
@@ -529,18 +534,6 @@ const CredentialsConfig: React.FC = () => {
                 required
               />
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Seller ID
-                </label>
-                <input
-                  type="text"
-                  value={mlForm.sellerId}
-                  onChange={(e) => setMlForm({ ...mlForm, sellerId: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
-                />
-              </div>
               
               <div className="flex gap-4 pt-4">
                 <button

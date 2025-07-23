@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const https = require('https');
 const querystring = require('querystring');
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const pool = require('../db/pool');
+const amazonSellerService = require('../services/amazonSellerService');
 
 // Armazenar temporariamente os callbacks (em produção, usar Redis ou banco de dados)
 const pendingCallbacks = new Map();
@@ -127,20 +128,72 @@ router.get('/check-callback', async (req, res) => {
     const tokenData = await exchangeCodeForToken(foundCallback.code);
 
     if (tokenData.refresh_token) {
+      // Obter marketplace do state armazenado
+      const marketplaceCode = foundCallback.state?.split('_')[2] || 'BR';
+      
+      // Obter informações do vendedor usando o access token
+      let sellerInfo = null;
+      try {
+        sellerInfo = await amazonSellerService.getSellerInfo(tokenData.access_token, marketplaceCode);
+      } catch (error) {
+        console.error('Erro ao obter seller info:', error);
+        // Usar seller ID do callback se disponível
+        sellerInfo = { sellerId: foundCallback.sellerId };
+      }
+      
       // Salvar no banco temporariamente (associado ao usuário depois)
       const userId = req.user?.id || 1; // Pegar do token JWT em produção
       
-      await executeSQL(
-        `UPDATE marketplace_credentials 
-         SET refresh_token = $1, access_token = $2, updated_at = NOW()
-         WHERE user_id = $3 AND marketplace = 'amazon'`,
-        [tokenData.refresh_token, tokenData.access_token, userId]
+      // Verificar se já existe registro
+      const existing = await pool.query(
+        'SELECT id FROM marketplace_credentials WHERE user_id = $1 AND marketplace = $2',
+        [userId, 'amazon']
       );
+      
+      if (existing.rows.length > 0) {
+        // Atualizar registro existente
+        await pool.query(
+          `UPDATE marketplace_credentials 
+           SET refresh_token = $1, 
+               access_token = $2, 
+               seller_id = $3,
+               marketplace_id = $4,
+               token_expires_at = $5,
+               updated_at = NOW()
+           WHERE user_id = $6 AND marketplace = 'amazon'`,
+          [
+            tokenData.refresh_token, 
+            tokenData.access_token, 
+            sellerInfo.sellerId,
+            sellerInfo.marketplaceId,
+            new Date(Date.now() + (tokenData.expires_in * 1000)),
+            userId
+          ]
+        );
+      } else {
+        // Criar novo registro
+        await pool.query(
+          `INSERT INTO marketplace_credentials 
+           (user_id, marketplace, refresh_token, access_token, seller_id, marketplace_id, token_expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            userId,
+            'amazon',
+            tokenData.refresh_token, 
+            tokenData.access_token, 
+            sellerInfo.sellerId,
+            sellerInfo.marketplaceId,
+            new Date(Date.now() + (tokenData.expires_in * 1000))
+          ]
+        );
+      }
 
       res.json({
         hasCallback: true,
         refreshToken: tokenData.refresh_token,
-        sellerId: foundCallback.sellerId
+        sellerId: sellerInfo.sellerId,
+        sellerName: sellerInfo.sellerName,
+        marketplaceInfo: sellerInfo
       });
     } else {
       res.json({ hasCallback: false, error: 'Falha ao obter refresh token' });

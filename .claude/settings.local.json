@@ -43,7 +43,11 @@
       "Bash(robocopy:*)",
       "Bash(copy-build.bat)",
       "Bash(mkdir:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(git reset:*)",
+      "Bash(cd \"C:\\Users\\davi\\YandexDisk\\Claude\\Projects\\ProftNew\")",
+      "Bash(git add package.json)",
+      "Bash(git commit -m \"Fix: Corrige erro de sintaxe JSON no package.json\n\n- Corrige indentação da seção scripts\n- Remove erro de parse que estava quebrando o deploy\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": []
   }

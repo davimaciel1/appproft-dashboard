@@ -51,13 +51,20 @@ router.post('/amazon', async (req, res) => {
     const credentials = req.body;
     
     // Validação básica
-    const requiredFields = ['clientId', 'clientSecret', 'refreshToken', 'sellerId'];
+    const requiredFields = ['clientId', 'clientSecret'];
     for (const field of requiredFields) {
       if (!credentials[field]) {
         return res.status(400).json({ 
           error: `Campo obrigatório ausente: ${field}` 
         });
       }
+    }
+    
+    // Refresh token é necessário apenas se não estiver gerando
+    if (!credentials.refreshToken && !credentials.generateRefreshToken) {
+      return res.status(400).json({ 
+        error: 'Refresh Token é obrigatório ou use o botão para gerar' 
+      });
     }
     
     // Testa as credenciais antes de salvar
@@ -97,7 +104,7 @@ router.post('/mercadolivre', async (req, res) => {
     const credentials = req.body;
     
     // Validação básica
-    const requiredFields = ['accessToken', 'refreshToken', 'clientId', 'clientSecret', 'sellerId'];
+    const requiredFields = ['accessToken', 'refreshToken', 'clientId', 'clientSecret'];
     for (const field of requiredFields) {
       if (!credentials[field]) {
         return res.status(400).json({ 

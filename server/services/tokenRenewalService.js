@@ -1,6 +1,6 @@
 const https = require('https');
 const querystring = require('querystring');
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const pool = require('../db/pool');
 const secureLogger = require('../utils/secureLogger');
 const crypto = require('crypto');
 
@@ -65,7 +65,7 @@ class TokenRenewalService {
   async checkAndRenewTokens() {
     try {
       // Buscar todas as credenciais do banco
-      const result = await executeSQL(`
+      const result = await pool.query(`
         SELECT 
           id,
           user_id,
@@ -153,7 +153,7 @@ class TokenRenewalService {
               const expiresAt = new Date(Date.now() + (response.expires_in * 1000));
               
               // Atualizar no banco
-              await executeSQL(`
+              await pool.query(`
                 UPDATE marketplace_credentials
                 SET 
                   access_token = $1,
@@ -228,7 +228,7 @@ class TokenRenewalService {
 
               // Se retornar novo refresh token, atualizar também
               if (response.refresh_token) {
-                await executeSQL(`
+                await pool.query(`
                   UPDATE marketplace_credentials
                   SET 
                     access_token = $1,
@@ -238,7 +238,7 @@ class TokenRenewalService {
                   WHERE id = $3
                 `, [...updateData.slice(0, 3), this.encrypt(response.refresh_token)]);
               } else {
-                await executeSQL(`
+                await pool.query(`
                   UPDATE marketplace_credentials
                   SET 
                     access_token = $1,
@@ -268,7 +268,7 @@ class TokenRenewalService {
   // Renovar token específico manualmente
   async renewToken(userId, marketplace) {
     try {
-      const result = await executeSQL(`
+      const result = await pool.query(`
         SELECT * FROM marketplace_credentials
         WHERE user_id = $1 AND marketplace = $2
       `, [userId, marketplace]);
