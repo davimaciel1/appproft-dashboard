@@ -3,12 +3,16 @@ const router = express.Router();
 const secureLogger = require('../utils/secureLogger');
 const AmazonService = require('../services/amazonService');
 const MercadoLivreService = require('../services/mercadolivreService');
+const CredentialsService = require('../services/credentialsService');
+
+const credentialsService = new CredentialsService();
 
 router.get('/metrics', async (req, res) => {
   try {
+    const userId = req.userId;
     const [amazonOrders, mlOrders] = await Promise.all([
-      getAmazonMetrics(),
-      getMercadoLivreMetrics()
+      getAmazonMetrics(userId),
+      getMercadoLivreMetrics(userId)
     ]);
     
     const consolidatedMetrics = {
@@ -33,12 +37,15 @@ router.get('/metrics', async (req, res) => {
   }
 });
 
-async function getAmazonMetrics() {
-  const amazonService = new AmazonService();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+async function getAmazonMetrics(userId) {
+  try {
+    // Busca credenciais do usuário
+    const credentials = await credentialsService.getCredentials(userId, 'amazon');
+    const amazonService = new AmazonService(credentials);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
   
-  const orders = await amazonService.getOrders(today.toISOString());
+    const orders = await amazonService.getOrders(today.toISOString());
   
   let todaysSales = 0;
   let unitsSold = 0;
@@ -50,22 +57,36 @@ async function getAmazonMetrics() {
     unitsSold += order.NumberOfItemsShipped || 0;
   });
   
-  return {
-    todaysSales,
-    ordersCount: orders.length,
-    unitsSold,
-    netProfit: todaysSales * 0.33,
-    acos: await amazonService.getACOS?.() || 16.7,
-    newOrders: orders.filter(o => o.OrderStatus === 'Unshipped').length
-  };
+    return {
+      todaysSales,
+      ordersCount: orders.length,
+      unitsSold,
+      netProfit: todaysSales * 0.33,
+      acos: await amazonService.getACOS?.() || 16.7,
+      newOrders: orders.filter(o => o.OrderStatus === 'Unshipped').length
+    };
+  } catch (error) {
+    secureLogger.error('Erro ao buscar métricas Amazon', { error: error.message, userId });
+    return {
+      todaysSales: 0,
+      ordersCount: 0,
+      unitsSold: 0,
+      netProfit: 0,
+      acos: 0,
+      newOrders: 0
+    };
+  }
 }
 
-async function getMercadoLivreMetrics() {
-  const mlService = new MercadoLivreService();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+async function getMercadoLivreMetrics(userId) {
+  try {
+    // Busca credenciais do usuário
+    const credentials = await credentialsService.getCredentials(userId, 'mercadolivre');
+    const mlService = new MercadoLivreService(credentials);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
   
-  const orders = await mlService.getOrders();
+    const orders = await mlService.getOrders();
   const todayOrders = orders.filter(order => {
     const orderDate = new Date(order.date_created);
     return orderDate >= today;
@@ -81,14 +102,25 @@ async function getMercadoLivreMetrics() {
     });
   });
   
-  return {
-    todaysSales,
-    ordersCount: todayOrders.length,
-    unitsSold,
-    netProfit: todaysSales * 0.33,
-    acos: 21.2,
-    newOrders: todayOrders.filter(o => o.status === 'confirmed').length
-  };
+    return {
+      todaysSales,
+      ordersCount: todayOrders.length,
+      unitsSold,
+      netProfit: todaysSales * 0.33,
+      acos: 21.2,
+      newOrders: todayOrders.filter(o => o.status === 'confirmed').length
+    };
+  } catch (error) {
+    secureLogger.error('Erro ao buscar métricas ML', { error: error.message, userId });
+    return {
+      todaysSales: 0,
+      ordersCount: 0,
+      unitsSold: 0,
+      netProfit: 0,
+      acos: 0,
+      newOrders: 0
+    };
+  }
 }
 
 function calculateWeightedACOS(amazon, ml) {
@@ -105,9 +137,10 @@ function calculateGrowth(amazon, ml) {
 
 router.get('/products', async (req, res) => {
   try {
+    const userId = req.userId;
     const [amazonProducts, mlProducts] = await Promise.all([
-      getAmazonProducts(),
-      getMercadoLivreProducts()
+      getAmazonProducts(userId),
+      getMercadoLivreProducts(userId)
     ]);
     
     const products = [...amazonProducts, ...mlProducts];
@@ -122,44 +155,56 @@ router.get('/products', async (req, res) => {
   }
 });
 
-async function getAmazonProducts() {
-  const amazonService = new AmazonService();
-  const amazonProducts = await amazonService.getProductsCatalog();
+async function getAmazonProducts(userId) {
+  try {
+    const credentials = await credentialsService.getCredentials(userId, 'amazon');
+    const amazonService = new AmazonService(credentials);
+    const amazonProducts = await amazonService.getProductsCatalog();
   
-  return amazonProducts.map((product, index) => ({
-    id: `amazon_${product.ASIN || index}`,
-    name: product.ProductName || 'Produto Amazon',
-    sku: product.ASIN || product.SellerSKU,
-    marketplace: 'amazon',
-    country: 'BR',
-    image: product.SmallImage?.URL || null,
-    units: product.QuantitySold || 0,
-    revenue: product.Revenue || 0,
-    profit: (product.Revenue || 0) * 0.3,
-    roi: calculateROI(product),
-    acos: product.ACOS || 15,
-    inventory: product.InStockSupplyQuantity || 0
-  }));
+    return amazonProducts.map((product, index) => ({
+      id: `amazon_${product.ASIN || index}`,
+      name: product.ProductName || 'Produto Amazon',
+      sku: product.ASIN || product.SellerSKU,
+      marketplace: 'amazon',
+      country: 'BR',
+      image: product.SmallImage?.URL || null,
+      units: product.QuantitySold || 0,
+      revenue: product.Revenue || 0,
+      profit: (product.Revenue || 0) * 0.3,
+      roi: calculateROI(product),
+      acos: product.ACOS || 15,
+      inventory: product.InStockSupplyQuantity || 0
+    }));
+  } catch (error) {
+    secureLogger.error('Erro ao buscar produtos Amazon', { error: error.message, userId });
+    return [];
+  }
 }
 
-async function getMercadoLivreProducts() {
-  const mlService = new MercadoLivreService();
-  const mlProducts = await mlService.getActiveListings();
+async function getMercadoLivreProducts(userId) {
+  try {
+    const credentials = await credentialsService.getCredentials(userId, 'mercadolivre');
+    const mlService = new MercadoLivreService(credentials);
+    const mlProducts = await mlService.getActiveListings();
   
-  return mlProducts.map(product => ({
-    id: `ml_${product.id}`,
-    name: product.title,
-    sku: product.id,
-    marketplace: 'mercadolivre',
-    country: 'BR',
-    image: product.thumbnail || null,
-    units: product.sold_quantity || 0,
-    revenue: (product.price || 0) * (product.sold_quantity || 0),
-    profit: (product.price || 0) * (product.sold_quantity || 0) * 0.3,
-    roi: calculateROI(product),
-    acos: 20,
-    inventory: product.available_quantity || 0
-  }));
+    return mlProducts.map(product => ({
+      id: `ml_${product.id}`,
+      name: product.title,
+      sku: product.id,
+      marketplace: 'mercadolivre',
+      country: 'BR',
+      image: product.thumbnail || null,
+      units: product.sold_quantity || 0,
+      revenue: (product.price || 0) * (product.sold_quantity || 0),
+      profit: (product.price || 0) * (product.sold_quantity || 0) * 0.3,
+      roi: calculateROI(product),
+      acos: 20,
+      inventory: product.available_quantity || 0
+    }));
+  } catch (error) {
+    secureLogger.error('Erro ao buscar produtos ML', { error: error.message, userId });
+    return [];
+  }
 }
 
 function calculateROI(product) {

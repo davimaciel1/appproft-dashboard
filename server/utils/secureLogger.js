@@ -151,6 +151,101 @@ class SecureLogger {
       statusCode: error.statusCode
     };
   }
+
+  /**
+   * Mascara dados sensíveis em strings
+   */
+  maskSensitiveData(str) {
+    if (!str || typeof str !== 'string') return str;
+
+    // Mascara tokens (mantém apenas primeiros 10 caracteres)
+    str = str.replace(/([A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*)/g, (match) => {
+      return match.substring(0, 10) + '...';
+    });
+
+    // Mascara Bearer tokens
+    str = str.replace(/Bearer\s+([A-Za-z0-9-_=]+)/gi, 'Bearer xxx...');
+
+    // Mascara emails (mantém domínio)
+    str = str.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, (match, user, domain) => {
+      return user.substring(0, 3) + '***@' + domain;
+    });
+
+    // Mascara CPF
+    str = str.replace(/\d{3}\.\d{3}\.\d{3}-\d{2}/g, 'XXX.XXX.XXX-XX');
+    
+    // Mascara CNPJ
+    str = str.replace(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g, 'XX.XXX.XXX/XXXX-XX');
+
+    // Mascara cartão de crédito
+    str = str.replace(/\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}/g, 'XXXX-XXXX-XXXX-XXXX');
+
+    return str;
+  }
+
+  /**
+   * Log de auditoria para ações críticas
+   */
+  audit(userId, action, details = {}) {
+    const auditEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'AUDIT',
+      userId,
+      action,
+      details: this.sanitize(details),
+      ip: details.ip,
+      userAgent: details.userAgent
+    };
+
+    // Em produção, isso deveria ir para um sistema de auditoria separado
+    console.log('[AUDIT]', JSON.stringify(auditEntry));
+  }
+
+  /**
+   * Log de métricas de performance
+   */
+  performance(operation, duration, metadata = {}) {
+    const perfEntry = {
+      timestamp: new Date().toISOString(),
+      level: 'PERFORMANCE',
+      operation,
+      duration: `${duration}ms`,
+      ...this.sanitize(metadata)
+    };
+
+    if (duration > 1000) {
+      perfEntry.warning = 'Slow operation detected';
+    }
+
+    console.log('[PERF]', JSON.stringify(perfEntry));
+  }
+
+  /**
+   * Cria um logger contextual para requisições
+   */
+  createRequestLogger(req) {
+    const requestId = req.id || Math.random().toString(36).substring(7);
+    const startTime = Date.now();
+
+    return {
+      info: (message, data) => {
+        this.info(`[${requestId}] ${message}`, { ...data, requestId });
+      },
+      warn: (message, data) => {
+        this.warn(`[${requestId}] ${message}`, { ...data, requestId });
+      },
+      error: (message, data) => {
+        this.error(`[${requestId}] ${message}`, { ...data, requestId });
+      },
+      debug: (message, data) => {
+        this.debug(`[${requestId}] ${message}`, { ...data, requestId });
+      },
+      performance: (operation) => {
+        const duration = Date.now() - startTime;
+        this.performance(operation, duration, { requestId });
+      }
+    };
+  }
 }
 
 // Singleton instance

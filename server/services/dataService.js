@@ -4,7 +4,7 @@ function getAmazonService() {
   if (process.env.USE_MOCK_DATA === 'true') {
     return null;
   }
-  return require('./amazonServiceNew');
+  return require('./amazonService');
 }
 
 function getMercadoLivreService() {

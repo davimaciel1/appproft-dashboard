@@ -1,17 +1,127 @@
 const pool = require('../db/pool');
 const axios = require('axios');
+const crypto = require('crypto');
+const secureLogger = require('../utils/secureLogger');
 
 class TokenManager {
   constructor() {
     this.renewalInterval = null;
+    this.tokens = {
+      amazon: {
+        accessToken: null,
+        expiresAt: null
+      },
+      mercadoLivre: {
+        accessToken: null,
+        expiresAt: null
+      }
+    };
     this.startAutoRenewal();
   }
 
-  // Renovar token do Mercado Livre
-  async renewMercadoLivreToken() {
+  // Criptografar token antes de salvar
+  encryptToken(token) {
+    if (!process.env.ENCRYPTION_KEY) {
+      throw new Error('ENCRYPTION_KEY não configurada');
+    }
+    
+    const algorithm = 'aes-256-gcm';
+    const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    
+    let encrypted = cipher.update(token, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    
+    const authTag = cipher.getAuthTag();
+    
+    return {
+      encrypted,
+      iv: iv.toString('hex'),
+      authTag: authTag.toString('hex')
+    };
+  }
+
+  // Descriptografar token
+  decryptToken(encryptedData) {
+    if (!process.env.ENCRYPTION_KEY) {
+      throw new Error('ENCRYPTION_KEY não configurada');
+    }
+    
+    const algorithm = 'aes-256-gcm';
+    const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+    const decipher = crypto.createDecipheriv(
+      algorithm, 
+      key, 
+      Buffer.from(encryptedData.iv, 'hex')
+    );
+    
+    decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
+    
+    let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    
+    return decrypted;
+  }
+
+  // Amazon SP-API Token Refresh
+  async getAmazonToken() {
     try {
-      console.log('🔄 Renovando token do Mercado Livre...');
+      // Verifica se o token ainda é válido
+      if (this.tokens.amazon.accessToken && new Date() < this.tokens.amazon.expiresAt) {
+        return this.tokens.amazon.accessToken;
+      }
+
+      secureLogger.info('Renovando token da Amazon SP-API');
+
+      // Renova o token
+      const response = await axios.post('https://api.amazon.com/auth/o2/token', 
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: process.env.AMAZON_REFRESH_TOKEN,
+          client_id: process.env.AMAZON_CLIENT_ID,
+          client_secret: process.env.AMAZON_CLIENT_SECRET
+        }), {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }
+      );
+
+      const { access_token, expires_in } = response.data;
+      const expiresAt = new Date(Date.now() + (expires_in * 1000) - 60000); // 1 min antes de expirar
       
+      // Armazena o novo token
+      this.tokens.amazon.accessToken = access_token;
+      this.tokens.amazon.expiresAt = expiresAt;
+      
+      // Salva no banco de forma segura
+      await this.saveTokenToDatabase('amazon', {
+        access_token,
+        expires_at: expiresAt
+      });
+      
+      secureLogger.info('Token da Amazon renovado com sucesso', {
+        expiresAt: expiresAt.toISOString()
+      });
+      
+      return access_token;
+    } catch (error) {
+      secureLogger.error('Erro ao renovar token da Amazon', {
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  // Mercado Livre Token Refresh
+  async getMercadoLivreToken() {
+    try {
+      // Verifica se o token ainda é válido
+      if (this.tokens.mercadoLivre.accessToken && new Date() < this.tokens.mercadoLivre.expiresAt) {
+        return this.tokens.mercadoLivre.accessToken;
+      }
+
+      secureLogger.info('Renovando token do Mercado Livre');
+
       const response = await axios.post('https://api.mercadolibre.com/oauth/token', {
         grant_type: 'refresh_token',
         client_id: process.env.ML_CLIENT_ID,
@@ -20,7 +130,11 @@ class TokenManager {
       });
 
       const { access_token, refresh_token, expires_in } = response.data;
-      const expiresAt = new Date(Date.now() + (expires_in * 1000));
+      const expiresAt = new Date(Date.now() + (expires_in * 1000) - 60000);
+
+      // Armazena o novo token
+      this.tokens.mercadoLivre.accessToken = access_token;
+      this.tokens.mercadoLivre.expiresAt = expiresAt;
 
       // Salvar no banco de dados
       await this.saveTokenToDatabase('mercadolivre', {
@@ -29,20 +143,47 @@ class TokenManager {
         expires_at: expiresAt
       });
 
-      // Atualizar variáveis de ambiente em runtime
-      process.env.ML_ACCESS_TOKEN = access_token;
-      if (refresh_token) {
+      // Atualizar refresh token se fornecido um novo
+      if (refresh_token && refresh_token !== process.env.ML_REFRESH_TOKEN) {
         process.env.ML_REFRESH_TOKEN = refresh_token;
+        await this.updateEnvFile('ML_REFRESH_TOKEN', refresh_token);
       }
 
-      console.log('✅ Token do Mercado Livre renovado com sucesso!');
-      console.log(`🕐 Expira em: ${expiresAt.toLocaleString('pt-BR')}`);
+      secureLogger.info('Token do Mercado Livre renovado com sucesso', {
+        expiresAt: expiresAt.toISOString()
+      });
       
-      return { access_token, refresh_token, expires_at: expiresAt };
+      return access_token;
       
     } catch (error) {
-      console.error('❌ Erro ao renovar token do Mercado Livre:', error.response?.data || error.message);
+      secureLogger.error('Erro ao renovar token do Mercado Livre', {
+        error: error.message,
+        response: error.response?.data
+      });
       throw error;
+    }
+  }
+
+  // Helper para atualizar o arquivo .env de forma segura
+  async updateEnvFile(key, value) {
+    const fs = require('fs').promises;
+    const path = require('path');
+    const envPath = path.resolve(process.cwd(), '.env');
+    
+    try {
+      let envContent = await fs.readFile(envPath, 'utf8');
+      const regex = new RegExp(`^${key}=.*$`, 'm');
+      
+      if (regex.test(envContent)) {
+        envContent = envContent.replace(regex, `${key}=${value}`);
+      } else {
+        envContent += `\n${key}=${value}`;
+      }
+      
+      await fs.writeFile(envPath, envContent);
+      secureLogger.info('Arquivo .env atualizado com novo refresh token');
+    } catch (error) {
+      secureLogger.error('Erro ao atualizar .env', { error: error.message });
     }
   }
 
@@ -90,11 +231,18 @@ class TokenManager {
     }
   }
 
-  // Salvar token no banco de dados
+  // Salvar token no banco de dados de forma segura
   async saveTokenToDatabase(marketplace, tokenData) {
     const client = await pool.connect();
     
     try {
+      // Criptografar tokens antes de salvar
+      const encryptedAccessToken = tokenData.access_token ? 
+        JSON.stringify(this.encryptToken(tokenData.access_token)) : null;
+      
+      const encryptedRefreshToken = tokenData.refresh_token ? 
+        JSON.stringify(this.encryptToken(tokenData.refresh_token)) : null;
+
       await client.query(`
         INSERT INTO marketplace_credentials (
           user_id, marketplace, access_token, refresh_token, expires_at
@@ -105,10 +253,16 @@ class TokenManager {
           refresh_token = EXCLUDED.refresh_token,
           expires_at = EXCLUDED.expires_at,
           updated_at = CURRENT_TIMESTAMP
-      `, [marketplace, tokenData.access_token, tokenData.refresh_token, tokenData.expires_at]);
+      `, [marketplace, encryptedAccessToken, encryptedRefreshToken, tokenData.expires_at]);
       
-      console.log(`💾 Token do ${marketplace} salvo no banco de dados`);
+      secureLogger.info('Token salvo no banco de dados', { marketplace });
       
+    } catch (error) {
+      secureLogger.error('Erro ao salvar token no banco', {
+        marketplace,
+        error: error.message
+      });
+      throw error;
     } finally {
       client.release();
     }
@@ -122,17 +276,42 @@ class TokenManager {
       const result = await client.query(`
         SELECT marketplace, access_token, refresh_token, expires_at
         FROM marketplace_credentials
-        WHERE user_id = 1
+        WHERE user_id = 1 AND expires_at > NOW()
       `);
 
       for (const row of result.rows) {
-        if (row.marketplace === 'mercadolivre') {
-          process.env.ML_ACCESS_TOKEN = row.access_token;
-          process.env.ML_REFRESH_TOKEN = row.refresh_token;
-          console.log(`📥 Token do Mercado Livre carregado do banco`);
+        try {
+          // Descriptografar tokens
+          const accessToken = row.access_token ? 
+            this.decryptToken(JSON.parse(row.access_token)) : null;
+          
+          const refreshToken = row.refresh_token ? 
+            this.decryptToken(JSON.parse(row.refresh_token)) : null;
+
+          if (row.marketplace === 'mercadolivre') {
+            this.tokens.mercadoLivre.accessToken = accessToken;
+            this.tokens.mercadoLivre.expiresAt = row.expires_at;
+            if (refreshToken) {
+              process.env.ML_REFRESH_TOKEN = refreshToken;
+            }
+            secureLogger.info('Token do Mercado Livre carregado do banco');
+          } else if (row.marketplace === 'amazon') {
+            this.tokens.amazon.accessToken = accessToken;
+            this.tokens.amazon.expiresAt = row.expires_at;
+            secureLogger.info('Token da Amazon carregado do banco');
+          }
+        } catch (error) {
+          secureLogger.error('Erro ao descriptografar token', {
+            marketplace: row.marketplace,
+            error: error.message
+          });
         }
       }
       
+    } catch (error) {
+      secureLogger.error('Erro ao carregar tokens do banco', {
+        error: error.message
+      });
     } finally {
       client.release();
     }
@@ -144,40 +323,57 @@ class TokenManager {
     
     try {
       const result = await client.query(`
-        SELECT marketplace, expires_at
+        SELECT marketplace, expires_at,
+               EXTRACT(EPOCH FROM (expires_at - NOW())) / 60 as minutes_until_expiry
         FROM marketplace_credentials
         WHERE user_id = 1 AND expires_at < NOW() + INTERVAL '1 hour'
       `);
 
       for (const row of result.rows) {
-        console.log(`⚠️  Token do ${row.marketplace} expira em menos de 1 hora!`);
+        secureLogger.warn('Token próximo do vencimento', {
+          marketplace: row.marketplace,
+          minutesUntilExpiry: Math.round(row.minutes_until_expiry)
+        });
         
         if (row.marketplace === 'mercadolivre') {
-          await this.renewMercadoLivreToken();
+          await this.getMercadoLivreToken();
+        } else if (row.marketplace === 'amazon') {
+          await this.getAmazonToken();
         }
       }
       
+    } catch (error) {
+      secureLogger.error('Erro ao verificar expiração de tokens', {
+        error: error.message
+      });
     } finally {
       client.release();
     }
   }
 
-  // Iniciar renovação automática a cada 5 horas
+  // Iniciar renovação automática
   startAutoRenewal() {
-    console.log('🤖 Sistema de renovação automática de tokens iniciado');
-    console.log('⏰ Verificação a cada 5 horas');
+    secureLogger.info('Sistema de renovação automática de tokens iniciado');
     
     // Carregar tokens existentes
-    this.loadTokensFromDatabase().catch(console.error);
+    this.loadTokensFromDatabase().catch(err => 
+      secureLogger.error('Erro ao carregar tokens na inicialização', { error: err.message })
+    );
     
     // Verificar imediatamente
-    this.checkTokenExpiration().catch(console.error);
+    setTimeout(() => {
+      this.checkTokenExpiration().catch(err => 
+        secureLogger.error('Erro na verificação inicial de tokens', { error: err.message })
+      );
+    }, 5000); // Aguarda 5 segundos para garantir que o sistema está pronto
     
-    // Configurar intervalo de 5 horas (18000000 ms)
+    // Configurar intervalo de 30 minutos para verificações mais frequentes
     this.renewalInterval = setInterval(async () => {
-      console.log('🔄 Verificação automática de tokens...');
-      await this.checkTokenExpiration().catch(console.error);
-    }, 5 * 60 * 60 * 1000); // 5 horas
+      secureLogger.debug('Verificação automática de tokens iniciada');
+      await this.checkTokenExpiration().catch(err => 
+        secureLogger.error('Erro na verificação automática de tokens', { error: err.message })
+      );
+    }, 30 * 60 * 1000); // 30 minutos
   }
 
   // Parar renovação automática
@@ -191,13 +387,37 @@ class TokenManager {
 
   // Forçar renovação manual de todos os tokens
   async forceRenewalAll() {
-    console.log('🔄 Forçando renovação de todos os tokens...');
+    secureLogger.info('Forçando renovação de todos os tokens');
+    
+    const results = {
+      amazon: { success: false, error: null },
+      mercadolivre: { success: false, error: null }
+    };
     
     try {
-      await this.renewMercadoLivreToken();
-      console.log('✅ Renovação forçada concluída!');
+      // Renovar token Amazon
+      try {
+        await this.getAmazonToken();
+        results.amazon.success = true;
+      } catch (error) {
+        results.amazon.error = error.message;
+        secureLogger.error('Erro ao renovar token Amazon', { error: error.message });
+      }
+      
+      // Renovar token Mercado Livre
+      try {
+        await this.getMercadoLivreToken();
+        results.mercadolivre.success = true;
+      } catch (error) {
+        results.mercadolivre.error = error.message;
+        secureLogger.error('Erro ao renovar token Mercado Livre', { error: error.message });
+      }
+      
+      secureLogger.info('Renovação forçada concluída', { results });
+      return results;
+      
     } catch (error) {
-      console.error('❌ Erro na renovação forçada:', error.message);
+      secureLogger.error('Erro crítico na renovação forçada', { error: error.message });
       throw error;
     }
   }

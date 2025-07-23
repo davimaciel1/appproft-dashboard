@@ -8,6 +8,7 @@ const socketIo = require('socket.io');
 const path = require('path');
 const pool = require('./db/pool');
 const { helmetConfig, generalLimiter, authLimiter, corsOptions, validateProductionEnv } = require('./config/security');
+const secureLogger = require('./utils/secureLogger');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,13 +41,14 @@ const authMiddleware = require('./middleware/auth');
 const { tenantIsolation } = require('./middleware/tenantIsolation');
 
 app.use('/api/health', require('./routes/health'));
-app.use('/api/auth', authLimiter, require('./routes/auth-simple'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/token-auth', require('./routes/token-auth'));
 app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
 app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
 app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
 app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
+app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
