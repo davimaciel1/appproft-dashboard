@@ -5,7 +5,7 @@ function getAmazonService() {
   if (process.env.USE_MOCK_DATA === 'true') {
     return null; // Don't load Amazon service when using mock data
   }
-  return require('../services/amazonServiceNew');
+  return require('../services/amazonService');
 }
 
 router.get('/orders', async (req, res) => {
