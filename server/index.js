@@ -7,6 +7,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const pool = require('./db/pool');
+const { helmetConfig, generalLimiter, authLimiter, corsOptions, validateProductionEnv } = require('./config/security');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,15 +19,15 @@ const io = socketIo(server, {
 });
 
 
-// Configure CORS for production
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [process.env.FRONTEND_URL || 'https://appproft.com']
-  : ["http://localhost:3000", "http://localhost:3003"];
+// Validar ambiente de produção
+if (process.env.NODE_ENV === 'production') {
+  validateProductionEnv();
+}
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+// Segurança
+app.use(helmetConfig);
+app.use(generalLimiter);
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -36,14 +37,16 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const authMiddleware = require('./middleware/auth');
+const { tenantIsolation } = require('./middleware/tenantIsolation');
 
-app.use('/api/auth', require('./routes/auth-simple'));
+app.use('/api/health', require('./routes/health'));
+app.use('/api/auth', authLimiter, require('./routes/auth-simple'));
 app.use('/api/token-auth', require('./routes/token-auth'));
 app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
-app.use('/api/amazon', authMiddleware, require('./routes/amazon'));
-app.use('/api/mercadolivre', authMiddleware, require('./routes/mercadolivre'));
-app.use('/api/dashboard', authMiddleware, require('./routes/dashboard'));
-app.use('/api/sync', authMiddleware, require('./routes/sync'));
+app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
+app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
+app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard'));
+app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
@@ -68,8 +71,10 @@ notificationService.initialize(io);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log('Sistema de notificações ativo');
+  secureLogger.info('Servidor iniciado com sucesso', { port: PORT });
+  
+  // Sistema de renovação automática de tokens
+  tokenManager.startAutoRenewal();
 });
 
 module.exports = { io };
