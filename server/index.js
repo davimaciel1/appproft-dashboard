@@ -11,6 +11,12 @@ const { helmetConfig, generalLimiter, authLimiter, corsOptions, validateProducti
 const secureLogger = require('./utils/secureLogger');
 
 const app = express();
+
+// IMPORTANTE: Configurar trust proxy ANTES de outros middlewares
+app.set('trust proxy', true);
+console.log('Trust proxy configurado:', app.get('trust proxy'));
+console.log('CORS_ORIGINS do ambiente:', process.env.CORS_ORIGINS);
+
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {

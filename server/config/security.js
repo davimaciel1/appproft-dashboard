@@ -61,18 +61,35 @@ const authLimiter = rateLimit({
 });
 
 /**
- * CORS configurado apenas para appproft.com
+ * CORS configurado para origens permitidas
  */
 const corsOptions = {
   origin: function (origin, callback) {
+    // Usar CORS_ORIGINS do ambiente ou fallback para valores padrão
+    const corsOrigins = process.env.CORS_ORIGINS 
+      ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+      : ['https://appproft.com', 'https://www.appproft.com', 'https://app.appproft.com'];
+    
+    // Em produção, adicionar também versões HTTP
     const allowedOrigins = [
-      'https://appproft.com',
-      'https://www.appproft.com',
-      'https://app.appproft.com'
+      ...corsOrigins,
+      'http://appproft.com',
+      'http://www.appproft.com',
+      'http://localhost:3000',
+      'http://localhost:3003'
     ];
+    
+    // Log para debug
+    console.log('CORS check - Origin:', origin);
+    console.log('CORS check - Allowed:', allowedOrigins);
     
     // Permite requisições sem origin (ex: Postman) apenas em dev
     if (!origin && process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    // Em produção, permitir requisições sem origin também (para healthcheck)
+    if (!origin) {
       return callback(null, true);
     }
     
@@ -80,7 +97,8 @@ const corsOptions = {
       callback(null, true);
     } else {
       secureLogger.warn('CORS bloqueado', {
-        origin
+        origin,
+        allowedOrigins
       });
       callback(new Error('Não permitido pelo CORS'));
     }
