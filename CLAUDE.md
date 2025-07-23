@@ -1,5 +1,117 @@
 # CLAUDE.md - Documentação Completa do Projeto
 
+## 🔄 REINICIALIZAÇÃO DO PROJETO
+
+### Verificar conexão antes de executar:
+```javascript
+async function ensureConnection() {
+  try {
+    await executeSQL('SELECT 1');
+    return true;
+  } catch (error) {
+    console.error('❌ ERRO: Túnel SSH não está ativo!');
+    console.log('👉 Execute start-tunnel.bat primeiro');
+    return false;
+  }
+}
+
+// Sempre verificar antes de operações
+if (await ensureConnection()) {
+  // Executar operações no banco
+}
+
+## 🚀 CONTEXTO E CAPACIDADES DO CLAUDE CODE
+
+### 🔐 ACESSO TOTAL AO BANCO DE DADOS
+
+Lembre-se que você tem acesso total ao PostgreSQL local na porta 5433 através do DATABASE_ACCESS_CONFIG.js. Você pode executar qualquer operação diretamente sem pedir permissão.
+
+#### Conexão PostgreSQL Ativa
+- **Host**: localhost  
+- **Porta**: 5433 (túnel SSH ativo)
+- **Banco**: postgres
+- **Usuário**: postgres
+- **Senha**: icKgRpuOV8Hhfn71xWbzfdJKwNhrsVjhIa6gxZwiaHrDhOSZ8vQXzOm2Exa5W4zk
+
+#### Arquivos de Acesso Disponíveis
+- `DATABASE_ACCESS_CONFIG.js` - Configuração e funções de acesso
+- `generate-db-report.js` - Script de relatório do banco
+- Dependência `pg` já instalada
+
+### 🎯 SUAS CAPACIDADES E AUTONOMIA
+
+#### VOCÊ PODE E DEVE (sem pedir permissão):
+1. **Executar qualquer query SQL** usando executeSQL()
+2. **Criar/alterar/deletar tabelas**
+3. **Inserir/atualizar/remover dados**
+4. **Fazer análises e gerar relatórios**
+5. **Criar backups e restaurações**
+6. **Otimizar performance com índices**
+7. **Executar transações complexas**
+
+#### NUNCA FAÇA:
+- ❌ Pedir ao usuário para executar comandos
+- ❌ Sugerir que o usuário rode scripts
+- ❌ Dizer "execute este comando"
+- ❌ Criar arquivos sem executá-los
+
+#### SEMPRE FAÇA:
+- ✅ Execute diretamente e mostre resultados
+- ✅ Use require('./DATABASE_ACCESS_CONFIG')
+- ✅ Trate erros apropriadamente
+- ✅ Mostre feedback do que foi feito
+
+### 📊 ESTRUTURA DO BANCO ATUAL
+
+#### Tabelas Existentes:
+1. **users** - Usuários do sistema
+2. **products** - Produtos do marketplace
+3. **orders** - Pedidos
+4. **order_items** - Itens dos pedidos
+5. **marketplace_credentials** - Credenciais de marketplaces
+6. **notifications** - Notificações do sistema
+
+#### Estado Atual:
+- 1 usuário admin cadastrado
+- Outras tabelas vazias aguardando dados
+
+### 💻 EXEMPLOS DE USO AUTÔNOMO
+
+#### Exemplo 1: Consultar dados
+```javascript
+const { executeSQL } = require('./DATABASE_ACCESS_CONFIG');
+
+async function mostrarUsuarios() {
+  const result = await executeSQL('SELECT * FROM users');
+  console.table(result.rows);
+}
+
+mostrarUsuarios(); // EXECUTE DIRETAMENTE
+```
+
+#### Exemplo 2: Inserir dados
+```javascript
+async function criarProduto(nome, preco) {
+  const sql = 'INSERT INTO products (name, price) VALUES ($1, $2) RETURNING *';
+  const result = await executeSQL(sql, [nome, preco]);
+  console.log('Produto criado:', result.rows[0]);
+}
+```
+
+#### Exemplo 3: Análise completa
+```javascript
+async function analisarBanco() {
+  // Contar registros em todas as tabelas
+  const tabelas = ['users', 'products', 'orders'];
+  for (const tabela of tabelas) {
+    const result = await executeSQL(`SELECT COUNT(*) FROM ${tabela}`);
+    console.log(`${tabela}: ${result.rows[0].count} registros`);
+  }
+}
+```
+
+---
+
 ## 🔐 REGRAS DE SEGURANÇA CRÍTICAS
 
 ### ⚠️ NUNCA EXPOR EM CÓDIGO OU LOGS:

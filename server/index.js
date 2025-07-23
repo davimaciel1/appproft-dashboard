@@ -9,6 +9,7 @@ const path = require('path');
 const pool = require('./db/pool');
 const { helmetConfig, generalLimiter, authLimiter, corsOptions, validateProductionEnv } = require('./config/security');
 const secureLogger = require('./utils/secureLogger');
+const tokenRenewalService = require('./services/tokenRenewalService');
 
 const app = express();
 
@@ -82,7 +83,8 @@ server.listen(PORT, () => {
   secureLogger.info('Servidor iniciado com sucesso', { port: PORT });
   
   // Sistema de renovação automática de tokens
-  tokenManager.startAutoRenewal();
+  tokenRenewalService.startAutoRenewal();
+  secureLogger.info('Sistema de renovação automática de tokens iniciado');
 });
 
 module.exports = { io };

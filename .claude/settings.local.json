@@ -34,7 +34,16 @@
       "Bash(git rm:*)",
       "Bash(mv:*)",
       "Bash(true)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(npm ls:*)",
+      "Bash(psql:*)",
+      "Bash(pg_ctl:*)",
+      "Bash(npm run build:*)",
+      "Bash(xcopy:*)",
+      "Bash(robocopy:*)",
+      "Bash(copy-build.bat)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "Dashboard consolidado de vendas - Amazon e Mercado Livre",
   "private": true,
-  "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "nodemon server/index.js",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
-    "start": "node server/index.js",
-    "setup": "npm install && cd client && npm install"
-  },
+"scripts": {
+  "dev": "concurrently \"npm run server\" \"npm run client\"",
+  "server": "nodemon server/index.js",
+  "client": "cd client && npm start",
+  "build": "cd client && npm run build",
+  "setup": "npm install && cd client && npm install",
+  "tunnel": "start start-tunnel.bat",
+  "test-db": "node quick-db-report.js",
+  "start-app": "node server/index.js"
+}
   "dependencies": {
     "@sp-api-sdk/auth": "^2.2.10",
     "@sp-api-sdk/orders-api-v0": "^5.1.0",
@@ -24,7 +26,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.2",
-    "pg": "^8.11.3",
+    "pg": "^8.16.3",
     "socket.io": "^4.6.2",
     "sqlite3": "^5.1.7"
   },

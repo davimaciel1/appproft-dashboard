@@ -4,8 +4,12 @@ const secureLogger = require('../utils/secureLogger');
 const CredentialsService = require('../services/credentialsService');
 const AmazonService = require('../services/amazonService');
 const MercadoLivreService = require('../services/mercadolivreService');
+const amazonCallbackRouter = require('./amazon-callback');
 
 const credentialsService = new CredentialsService();
+
+// Montar rotas de callback da Amazon
+router.use('/amazon', amazonCallbackRouter);
 
 // Obter credenciais configuradas
 router.get('/', async (req, res) => {

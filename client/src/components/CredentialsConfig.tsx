@@ -12,8 +12,6 @@ interface AmazonForm {
   refreshToken: string;
   sellerId: string;
   marketplaceId: string;
-  awsAccessKey: string;
-  awsSecretKey: string;
 }
 
 interface MlForm {
@@ -43,10 +41,12 @@ const CredentialsConfig: React.FC = () => {
     clientSecret: '',
     refreshToken: '',
     sellerId: '',
-    marketplaceId: 'A2Q3Y263D00KWC',
-    awsAccessKey: '',
-    awsSecretKey: ''
+    marketplaceId: 'A2Q3Y263D00KWC'
   });
+  
+  const [authorizationStep, setAuthorizationStep] = useState<'initial' | 'waiting' | 'completed'>('initial');
+  const [authorizationUrl, setAuthorizationUrl] = useState<string>('');
+  const [processingAuth, setProcessingAuth] = useState(false);
   
   const [mlForm, setMlForm] = useState<MlForm>({
     clientId: '',
@@ -60,7 +60,30 @@ const CredentialsConfig: React.FC = () => {
 
   useEffect(() => {
     fetchCredentialsStatus();
+    // Carregar credenciais existentes se disponíveis
+    loadExistingCredentials();
   }, []);
+
+  const loadExistingCredentials = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/credentials/details', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.amazon) {
+        setAmazonForm(prev => ({
+          ...prev,
+          clientId: response.data.amazon.clientId || '',
+          sellerId: response.data.amazon.sellerId || '',
+          marketplaceId: response.data.amazon.marketplaceId || prev.marketplaceId
+        }));
+      }
+    } catch (error) {
+      // Silenciosamente ignorar se não houver credenciais
+      console.log('Nenhuma credencial existente encontrada');
+    }
+  };
 
   const fetchCredentialsStatus = async () => {
     try {
@@ -92,16 +115,9 @@ const CredentialsConfig: React.FC = () => {
       setMessage({ type: 'success', text: response.data.message });
       fetchCredentialsStatus();
       
-      // Limpar formulário após sucesso
-      setAmazonForm({
-        clientId: '',
-        clientSecret: '',
-        refreshToken: '',
-        sellerId: '',
-        marketplaceId: 'A2Q3Y263D00KWC',
-        awsAccessKey: '',
-        awsSecretKey: ''
-      });
+      // Manter o formulário preenchido para permitir atualizações
+      // Apenas resetar o estado de autorização
+      setAuthorizationStep('initial');
     } catch (error: any) {
       setMessage({ 
         type: 'error', 
@@ -168,6 +184,58 @@ const CredentialsConfig: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAmazonAuthUrl = () => {
+    if (!amazonForm.clientId) {
+      setMessage({ type: 'error', text: 'Preencha o Client ID primeiro' });
+      return;
+    }
+
+    const marketplaceUrls: Record<string, string> = {
+      'A2Q3Y263D00KWC': 'https://sellercentral.amazon.com.br', // Brasil
+      'ATVPDKIKX0DER': 'https://sellercentral.amazon.com',    // EUA
+      'A1F83G8C2ARO7P': 'https://sellercentral.amazon.co.uk',  // Reino Unido
+      'A1PA6795UKMFR9': 'https://sellercentral.amazon.de',     // Alemanha
+      'A13V1IB3VIYZZH': 'https://sellercentral.amazon.fr',     // França
+      'APJ6JRA9NG5V4': 'https://sellercentral.amazon.it',      // Itália
+      'A1RKKUPIHCS9HS': 'https://sellercentral.amazon.es'      // Espanha
+    };
+
+    const baseUrl = marketplaceUrls[amazonForm.marketplaceId] || marketplaceUrls['A2Q3Y263D00KWC'];
+    const state = `appproft_${Date.now()}`;
+    const url = `${baseUrl}/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&version=beta`;
+    
+    setAuthorizationUrl(url);
+    setAuthorizationStep('waiting');
+    
+    // Salvar state no localStorage para validar depois
+    localStorage.setItem('amazon_auth_state', state);
+    
+    // Abrir URL em nova aba
+    window.open(url, '_blank');
+  };
+
+  const checkAuthorizationCallback = async () => {
+    setProcessingAuth(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/credentials/amazon/check-callback', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.hasCallback && response.data.refreshToken) {
+        setAmazonForm({ ...amazonForm, refreshToken: response.data.refreshToken });
+        setAuthorizationStep('completed');
+        setMessage({ type: 'success', text: 'Refresh Token obtido com sucesso!' });
+      } else {
+        setMessage({ type: 'error', text: 'Ainda aguardando autorização...' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao verificar autorização' });
+    } finally {
+      setProcessingAuth(false);
     }
   };
 
@@ -299,14 +367,65 @@ const CredentialsConfig: React.FC = () => {
                 />
               </div>
               
-              <SecretField
-                label="Refresh Token"
-                name="refreshToken"
-                value={amazonForm.refreshToken}
-                onChange={(e) => setAmazonForm({ ...amazonForm, refreshToken: e.target.value })}
-                field="amazonRefreshToken"
-                required
-              />
+              <div className="space-y-2">
+                <SecretField
+                  label="Refresh Token"
+                  name="refreshToken"
+                  value={amazonForm.refreshToken}
+                  onChange={(e) => setAmazonForm({ ...amazonForm, refreshToken: e.target.value })}
+                  field="amazonRefreshToken"
+                  required={authorizationStep !== 'waiting'}
+                />
+                
+                {/* Botão para gerar Refresh Token */}
+                {amazonForm.clientId && amazonForm.clientSecret && !amazonForm.refreshToken && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-2">
+                    <p className="text-sm text-blue-800 mb-3">
+                      Não tem um Refresh Token? Clique abaixo para gerar:
+                    </p>
+                    
+                    {authorizationStep === 'initial' && (
+                      <button
+                        type="button"
+                        onClick={generateAmazonAuthUrl}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                      >
+                        Gerar Refresh Token
+                      </button>
+                    )}
+                    
+                    {authorizationStep === 'waiting' && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-blue-700">
+                          ✅ Uma nova aba foi aberta. Complete a autorização na Amazon.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={checkAuthorizationCallback}
+                          disabled={processingAuth}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm disabled:opacity-50"
+                        >
+                          {processingAuth ? 'Verificando...' : 'Verificar Autorização'}
+                        </button>
+                        <div className="text-xs text-gray-600">
+                          <p>URL de autorização:</p>
+                          <a href={authorizationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                            {authorizationUrl}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {authorizationStep === 'completed' && (
+                      <div className="bg-green-100 border border-green-300 rounded p-3">
+                        <p className="text-sm text-green-800">
+                          ✅ Refresh Token obtido com sucesso! Agora você pode salvar as credenciais.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -336,23 +455,6 @@ const CredentialsConfig: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SecretField
-                  label="AWS Access Key (opcional)"
-                  name="awsAccessKey"
-                  value={amazonForm.awsAccessKey}
-                  onChange={(e) => setAmazonForm({ ...amazonForm, awsAccessKey: e.target.value })}
-                  field="awsAccessKey"
-                />
-                
-                <SecretField
-                  label="AWS Secret Key (opcional)"
-                  name="awsSecretKey"
-                  value={amazonForm.awsSecretKey}
-                  onChange={(e) => setAmazonForm({ ...amazonForm, awsSecretKey: e.target.value })}
-                  field="awsSecretKey"
-                />
-              </div>
               
               <div className="flex gap-4 pt-4">
                 <button
