@@ -17,7 +17,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSync, marketplace = 'all' }) 
         ? '/api/sync/all'
         : `/api/sync/${marketplace}`;
         
-      const response = await fetch(`http://localhost:3004${endpoint}`, {
+      const response = await fetch(`${window.location.origin}${endpoint}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

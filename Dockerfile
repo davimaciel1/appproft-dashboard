@@ -3,7 +3,7 @@ FROM node:18-alpine AS frontend-build
 
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY client/ ./
 RUN npm run build

@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchDashboardData();
     
-    const socket = io('http://localhost:3004');
+    const socket = io(window.location.origin);
     
     socket.on('newOrder', (notification) => {
       import('../components/NotificationToast').then(({ showOrderNotification }) => {
