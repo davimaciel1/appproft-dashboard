@@ -1,0 +1,476 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface Credentials {
+  amazon: { configured: boolean; sellerId?: string; marketplaceId?: string };
+  mercadolivre: { configured: boolean; sellerId?: string };
+}
+
+interface AmazonForm {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  sellerId: string;
+  marketplaceId: string;
+  awsAccessKey: string;
+  awsSecretKey: string;
+}
+
+interface MlForm {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  accessToken: string;
+  sellerId: string;
+}
+
+interface Message {
+  type: 'success' | 'error';
+  text: string;
+}
+
+const CredentialsConfig: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'amazon' | 'mercadolivre'>('amazon');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<Message | null>(null);
+  const [credentials, setCredentials] = useState<Credentials>({
+    amazon: { configured: false },
+    mercadolivre: { configured: false }
+  });
+  
+  const [amazonForm, setAmazonForm] = useState<AmazonForm>({
+    clientId: '',
+    clientSecret: '',
+    refreshToken: '',
+    sellerId: '',
+    marketplaceId: 'A2Q3Y263D00KWC',
+    awsAccessKey: '',
+    awsSecretKey: ''
+  });
+  
+  const [mlForm, setMlForm] = useState<MlForm>({
+    clientId: '',
+    clientSecret: '',
+    refreshToken: '',
+    accessToken: '',
+    sellerId: ''
+  });
+  
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchCredentialsStatus();
+  }, []);
+
+  const fetchCredentialsStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/credentials', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCredentials(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar status das credenciais:', error);
+    }
+  };
+
+  const toggleShowSecret = (field: string) => {
+    setShowSecrets(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleAmazonSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('/api/credentials/amazon', amazonForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage({ type: 'success', text: response.data.message });
+      fetchCredentialsStatus();
+      
+      // Limpar formulário após sucesso
+      setAmazonForm({
+        clientId: '',
+        clientSecret: '',
+        refreshToken: '',
+        sellerId: '',
+        marketplaceId: 'A2Q3Y263D00KWC',
+        awsAccessKey: '',
+        awsSecretKey: ''
+      });
+    } catch (error: any) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Erro ao salvar credenciais' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('/api/credentials/mercadolivre', mlForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage({ type: 'success', text: response.data.message });
+      fetchCredentialsStatus();
+      
+      // Limpar formulário após sucesso
+      setMlForm({
+        clientId: '',
+        clientSecret: '',
+        refreshToken: '',
+        accessToken: '',
+        sellerId: ''
+      });
+    } catch (error: any) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Erro ao salvar credenciais' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestCredentials = async (service: 'amazon' | 'mercadolivre') => {
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = service === 'amazon' ? amazonForm : mlForm;
+      
+      const response = await axios.post(`/api/credentials/${service}/test`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Credenciais válidas!' });
+      } else {
+        setMessage({ type: 'error', text: response.data.error || 'Credenciais inválidas' });
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: 'Erro ao testar credenciais' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const SecretField: React.FC<{
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    field: string;
+    required?: boolean;
+  }> = ({ label, name, value, onChange, field, required = false }) => (
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type={showSecrets[field] ? 'text' : 'password'}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange pr-10"
+        />
+        <button
+          type="button"
+          onClick={() => toggleShowSecret(field)}
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+        >
+          {showSecrets[field] ? (
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto mt-8 px-4">
+      <div className="bg-white rounded-lg shadow-lg">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Configuração de Credenciais
+          </h2>
+          
+          {/* Status das credenciais */}
+          <div className="flex gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${credentials.amazon.configured ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm font-medium">
+                Amazon {credentials.amazon.configured ? 'Configurado' : 'Não configurado'}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${credentials.mercadolivre.configured ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm font-medium">
+                Mercado Livre {credentials.mercadolivre.configured ? 'Configurado' : 'Não configurado'}
+              </span>
+            </div>
+          </div>
+
+          {/* Mensagem */}
+          {message && (
+            <div className={`mb-4 p-4 rounded-md ${
+              message.type === 'success' 
+                ? 'bg-green-50 text-green-800 border border-green-200' 
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab('amazon')}
+              className={`px-4 py-2 font-medium text-sm border-b-2 ${
+                activeTab === 'amazon'
+                  ? 'border-primary-orange text-primary-orange'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Amazon SP-API
+            </button>
+            <button
+              onClick={() => setActiveTab('mercadolivre')}
+              className={`px-4 py-2 font-medium text-sm border-b-2 ml-8 ${
+                activeTab === 'mercadolivre'
+                  ? 'border-primary-orange text-primary-orange'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Mercado Livre API
+            </button>
+          </div>
+
+          {/* Amazon Form */}
+          {activeTab === 'amazon' && (
+            <form onSubmit={handleAmazonSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client ID
+                  </label>
+                  <input
+                    type="text"
+                    value={amazonForm.clientId}
+                    onChange={(e) => setAmazonForm({ ...amazonForm, clientId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                  />
+                </div>
+                
+                <SecretField
+                  label="Client Secret"
+                  name="clientSecret"
+                  value={amazonForm.clientSecret}
+                  onChange={(e) => setAmazonForm({ ...amazonForm, clientSecret: e.target.value })}
+                  field="amazonClientSecret"
+                  required
+                />
+              </div>
+              
+              <SecretField
+                label="Refresh Token"
+                name="refreshToken"
+                value={amazonForm.refreshToken}
+                onChange={(e) => setAmazonForm({ ...amazonForm, refreshToken: e.target.value })}
+                field="amazonRefreshToken"
+                required
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Seller ID
+                  </label>
+                  <input
+                    type="text"
+                    value={amazonForm.sellerId}
+                    onChange={(e) => setAmazonForm({ ...amazonForm, sellerId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Marketplace ID
+                  </label>
+                  <input
+                    type="text"
+                    value={amazonForm.marketplaceId}
+                    onChange={(e) => setAmazonForm({ ...amazonForm, marketplaceId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SecretField
+                  label="AWS Access Key (opcional)"
+                  name="awsAccessKey"
+                  value={amazonForm.awsAccessKey}
+                  onChange={(e) => setAmazonForm({ ...amazonForm, awsAccessKey: e.target.value })}
+                  field="awsAccessKey"
+                />
+                
+                <SecretField
+                  label="AWS Secret Key (opcional)"
+                  name="awsSecretKey"
+                  value={amazonForm.awsSecretKey}
+                  onChange={(e) => setAmazonForm({ ...amazonForm, awsSecretKey: e.target.value })}
+                  field="awsSecretKey"
+                />
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => handleTestCredentials('amazon')}
+                  disabled={loading || !amazonForm.clientId || !amazonForm.clientSecret}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Testar Conexão
+                </button>
+                
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2 bg-primary-orange text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Credenciais'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Mercado Livre Form */}
+          {activeTab === 'mercadolivre' && (
+            <form onSubmit={handleMlSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client ID
+                  </label>
+                  <input
+                    type="text"
+                    value={mlForm.clientId}
+                    onChange={(e) => setMlForm({ ...mlForm, clientId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                  />
+                </div>
+                
+                <SecretField
+                  label="Client Secret"
+                  name="clientSecret"
+                  value={mlForm.clientSecret}
+                  onChange={(e) => setMlForm({ ...mlForm, clientSecret: e.target.value })}
+                  field="mlClientSecret"
+                  required
+                />
+              </div>
+              
+              <SecretField
+                label="Access Token"
+                name="accessToken"
+                value={mlForm.accessToken}
+                onChange={(e) => setMlForm({ ...mlForm, accessToken: e.target.value })}
+                field="mlAccessToken"
+                required
+              />
+              
+              <SecretField
+                label="Refresh Token"
+                name="refreshToken"
+                value={mlForm.refreshToken}
+                onChange={(e) => setMlForm({ ...mlForm, refreshToken: e.target.value })}
+                field="mlRefreshToken"
+                required
+              />
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seller ID
+                </label>
+                <input
+                  type="text"
+                  value={mlForm.sellerId}
+                  onChange={(e) => setMlForm({ ...mlForm, sellerId: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-orange focus:border-primary-orange"
+                />
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => handleTestCredentials('mercadolivre')}
+                  disabled={loading || !mlForm.clientId || !mlForm.clientSecret}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Testar Conexão
+                </button>
+                
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2 bg-primary-orange text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Credenciais'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CredentialsConfig;
