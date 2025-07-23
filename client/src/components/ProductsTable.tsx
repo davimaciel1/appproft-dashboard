@@ -48,7 +48,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
   // Converter produtos para o formato esperado pelo ProductRow
   const formattedProducts = products.map(product => ({
     ...product,
-    imageUrl: product.imageUrl || product.image || '/placeholder.png',
+    imageUrl: product.imageUrl || '/placeholder.png',
     marketplaceLogo: product.marketplace as 'amazon' | 'mercadolivre',
     countryFlag: product.country
   }));
