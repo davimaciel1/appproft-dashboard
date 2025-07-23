@@ -160,7 +160,7 @@ class CredentialsService {
   /**
    * Remove credenciais de um usuário
    */
-  async removeCredentials(userId, service) {
+  async deleteCredentials(userId, service) {
     const client = await pool.connect();
     
     try {
