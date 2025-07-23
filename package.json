@@ -11,7 +11,9 @@
     "setup": "npm install && cd client && npm install",
     "tunnel": "start start-tunnel.bat",
     "test-db": "node quick-db-report.js",
-    "start-app": "node server/index.js"
+    "start-app": "node server/index.js",
+    "migrate": "node server/db/migrate.js",
+    "sync:test": "node server/services/testSync.js"
   },
   "dependencies": {
     "@sp-api-sdk/auth": "^2.2.10",

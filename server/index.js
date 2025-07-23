@@ -95,13 +95,25 @@ if (process.env.NODE_ENV === 'production') {
 // Inicializar serviço de notificações
 notificationService.initialize(io);
 
+// Make io globally available for sync service
+global.io = io;
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   secureLogger.info('Servidor iniciado com sucesso', { port: PORT });
   
   // Sistema de renovação automática de tokens
   tokenRenewalService.startAutoRenewal();
   secureLogger.info('Sistema de renovação automática de tokens iniciado');
+  
+  // Start real-time sync worker
+  try {
+    const realtimeSyncWorker = require('./workers/realtimeSync');
+    await realtimeSyncWorker.start();
+    secureLogger.info('Worker de sincronização em tempo real iniciado');
+  } catch (error) {
+    secureLogger.error('Erro ao iniciar worker de sincronização', { error: error.message });
+  }
 });
 
 module.exports = { io };

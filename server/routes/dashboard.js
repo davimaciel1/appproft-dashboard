@@ -200,12 +200,113 @@ function calculateGrowth(amazon, ml) {
 router.get('/products', async (req, res) => {
   try {
     const userId = req.userId;
-    const [amazonProducts, mlProducts] = await Promise.all([
-      getAmazonProducts(userId),
-      getMercadoLivreProducts(userId)
-    ]);
+    const { marketplace = 'all', period = 'all', country = 'all' } = req.query;
     
-    const products = [...amazonProducts, ...mlProducts];
+    // Build where clauses
+    const whereClauses = ['p.tenant_id = $1'];
+    const params = [userId];
+    let paramCount = 1;
+    
+    if (marketplace !== 'all') {
+      paramCount++;
+      whereClauses.push(`p.marketplace = $${paramCount}`);
+      params.push(marketplace);
+    }
+    
+    if (country !== 'all') {
+      paramCount++;
+      whereClauses.push(`p.country_code = $${paramCount}`);
+      params.push(country);
+    }
+    
+    // Add date filter for "today units"
+    let dateFilter = '';
+    if (period !== 'all') {
+      const startDate = new Date();
+      switch (period) {
+        case 'today':
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'yesterday':
+          startDate.setDate(startDate.getDate() - 1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'last7days':
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case 'last30days':
+          startDate.setDate(startDate.getDate() - 30);
+          break;
+        case 'thisMonth':
+          startDate.setDate(1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+      }
+      paramCount++;
+      dateFilter = `AND o.order_date >= $${paramCount}`;
+      params.push(startDate.toISOString());
+    }
+    
+    // Query products from materialized view with additional real-time data
+    const query = `
+      SELECT 
+        p.id,
+        p.marketplace,
+        p.country_code,
+        p.asin,
+        p.sku,
+        p.name,
+        p.image_url,
+        COALESCE(ps.total_orders, 0) as total_orders,
+        COALESCE(ps.total_units_sold, 0) as total_units_sold,
+        COALESCE(ps.total_revenue, 0) as total_revenue,
+        COALESCE(ps.total_profit, 0) as total_profit,
+        COALESCE(ps.roi, 0) as roi,
+        COALESCE(ps.sales_rank, 999) as sales_rank,
+        COALESCE(i.quantity, 0) as inventory,
+        COALESCE(i.alert_level, 10) as alert_level,
+        COALESCE(
+          (SELECT SUM(oi2.quantity) 
+           FROM order_items oi2 
+           JOIN orders o2 ON oi2.order_id = o2.id 
+           WHERE oi2.product_id = p.id 
+           AND DATE(o2.order_date) = CURRENT_DATE), 0
+        ) as today_units,
+        CASE 
+          WHEN ps.total_revenue > 0 
+          THEN (ps.total_profit / ps.total_revenue * 100)
+          ELSE 0 
+        END as profit_margin
+      FROM products p
+      LEFT JOIN product_sales_summary ps ON p.id = ps.id
+      LEFT JOIN inventory i ON p.id = i.product_id
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY COALESCE(ps.total_units_sold, 0) DESC, p.name
+      LIMIT 100
+    `;
+    
+    const result = await pool.query(query, params);
+    
+    // Format products for frontend
+    const products = result.rows.map((product, index) => ({
+      id: `${product.marketplace}_${product.id}`,
+      name: product.name,
+      sku: product.sku || product.asin,
+      marketplace: product.marketplace,
+      country: product.country_code || 'BR',
+      image: product.image_url,
+      units: product.total_units_sold,
+      todayUnits: product.today_units,
+      revenue: parseFloat(product.total_revenue),
+      profit: parseFloat(product.total_profit),
+      profitMargin: parseFloat(product.profit_margin),
+      roi: parseFloat(product.roi),
+      acos: product.marketplace === 'amazon' ? 16.7 : 20, // Placeholder until we get advertising data
+      inventory: product.inventory,
+      alertLevel: product.alert_level,
+      rank: index + 1,
+      totalOrders: product.total_orders
+    }));
     
     res.json({ products });
   } catch (error) {

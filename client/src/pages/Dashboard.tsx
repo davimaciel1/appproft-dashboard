@@ -7,6 +7,7 @@ import FiltersBar from '../components/FiltersBar';
 import ProductsTable from '../components/ProductsTable';
 import HeroSection from '../components/HeroSection';
 import SyncButton from '../components/SyncButton';
+import RealtimeOrdersSidebar from '../components/RealtimeOrdersSidebar';
 
 const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState({
@@ -24,6 +25,7 @@ const Dashboard: React.FC = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [realtimeOrders, setRealtimeOrders] = useState([]);
   const [filters, setFilters] = useState({
     marketplace: 'all',
     period: 'today',
@@ -35,10 +37,20 @@ const Dashboard: React.FC = () => {
     
     const socket = io(window.location.origin);
     
-    socket.on('newOrder', (notification) => {
+    socket.on('new-order', (order) => {
+      // Add to realtime orders list
+      setRealtimeOrders(prev => [{
+        ...order,
+        id: `${order.marketplace}_${order.orderId}_${Date.now()}`,
+        timestamp: new Date()
+      }, ...prev].slice(0, 10));
+      
+      // Show toast notification
       import('../components/NotificationToast').then(({ showOrderNotification }) => {
-        showOrderNotification(notification);
+        showOrderNotification(order);
       });
+      
+      // Refresh dashboard data
       fetchDashboardData();
     });
 
@@ -116,7 +128,15 @@ const Dashboard: React.FC = () => {
               <>
                 <MetricsCards metrics={metrics} />
                 <FiltersBar onFiltersChange={handleFiltersChange} />
-                <ProductsTable products={filteredProducts.length > 0 ? filteredProducts : products} />
+                
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
+                  <div className="lg:col-span-3">
+                    <ProductsTable products={filteredProducts.length > 0 ? filteredProducts : products} />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <RealtimeOrdersSidebar orders={realtimeOrders} />
+                  </div>
+                </div>
               </>
             )}
           </div>
