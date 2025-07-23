@@ -80,9 +80,9 @@ class CredentialsService {
       }
       
       await client.query(`
-        INSERT INTO api_tokens (user_id, service, credentials, updated_at)
+        INSERT INTO marketplace_credentials (user_id, marketplace, credentials, updated_at)
         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-        ON CONFLICT (user_id, service) 
+        ON CONFLICT (user_id, marketplace) 
         DO UPDATE SET 
           credentials = $3,
           updated_at = CURRENT_TIMESTAMP
@@ -114,8 +114,8 @@ class CredentialsService {
     try {
       const result = await client.query(`
         SELECT credentials 
-        FROM api_tokens 
-        WHERE user_id = $1 AND service = $2
+        FROM marketplace_credentials 
+        WHERE user_id = $1 AND marketplace = $2
       `, [userId, service]);
       
       if (result.rows.length === 0) {
@@ -165,8 +165,8 @@ class CredentialsService {
     
     try {
       await client.query(`
-        DELETE FROM api_tokens 
-        WHERE user_id = $1 AND service = $2
+        DELETE FROM marketplace_credentials 
+        WHERE user_id = $1 AND marketplace = $2
       `, [userId, service]);
       
       secureLogger.info('Credenciais removidas', {
