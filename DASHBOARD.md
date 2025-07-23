@@ -1,315 +1,166 @@
- DASHBOARD APPPROFT - ESPECIFICAÇÃO COMPLETA v2.0
-🎯 OBJETIVO PRINCIPAL
-Criar um dashboard profissional que mostre dados REAIS da Amazon e Mercado Livre, com produtos agrupados por vendas (mais vendidos primeiro) e atualização de pedidos em tempo real.
-❌ PROBLEMAS ATUAIS QUE DEVEM SER CORRIGIDOS
+Preciso que você recrie COMPLETAMENTE o dashboard baseado nesta descrição detalhada:
 
-Produtos sem imagens - Implementar fallback e lazy loading
-Valores todos zerados - Conectar com PostgreSQL e APIs reais
-Filtros não funcionam - Implementar lógica de filtros
-Sem agrupamento - Agrupar produtos por total de vendas
-Sem real-time - Implementar WebSocket/SSE para novos pedidos
+## LAYOUT GERAL
 
-✅ ARQUITETURA DA SOLUÇÃO
-1. FLUXO DE DADOS OBRIGATÓRIO
-APIs (Amazon/ML) → PostgreSQL → Dashboard
-     ↓                ↓           ↓
-[Rate Limiter]   [Cache Redis]  [WebSocket]
-2. ESTRUTURA DO BANCO (PostgreSQL)
-sql-- Tabela principal de produtos com agregações
-CREATE MATERIALIZED VIEW product_sales_summary AS
-SELECT 
-  p.*,
-  COUNT(DISTINCT o.id) as total_orders,
-  SUM(oi.quantity) as total_units_sold,
-  SUM(oi.price * oi.quantity) as total_revenue,
-  SUM((oi.price - oi.cost) * oi.quantity) as total_profit,
-  RANK() OVER (ORDER BY SUM(oi.quantity) DESC) as sales_rank
-FROM products p
-LEFT JOIN order_items oi ON p.id = oi.product_id
-LEFT JOIN orders o ON oi.order_id = o.id
-WHERE o.status NOT IN ('cancelled', 'returned')
-GROUP BY p.id
-ORDER BY total_units_sold DESC;
+### HEADER DO DASHBOARD
+- Fundo: Verde escuro (#16A34A ou similar)
+- Altura: ~60px
+- Título "Sales" em branco no canto esquerdo
+- Botão "Get a discount!" no canto direito com bandeira dos EUA
 
--- Índices para performance
-CREATE INDEX idx_orders_date ON orders(order_date DESC);
-CREATE INDEX idx_products_tenant ON products(tenant_id, marketplace);
-📋 IMPLEMENTAÇÃO PASSO A PASSO
-PASSO 1: Configurar Conexões com APIs Reais
-javascript// config/apis.js
-const { SellingPartner } = require('amazon-sp-api');
+### BARRA DE FILTROS (abaixo do header verde)
+- Fundo: Branco
+- Padding: 16px
+- 5 elementos em linha:
 
-// Configurar Amazon SP-API
-const amazonClient = new SellingPartner({
-  region: 'na',
-  refresh_token: process.env.AMAZON_REFRESH_TOKEN,
-  options: {
-    auto_request_tokens: true,
-    auto_request_throttled: true
-  }
-});
+1. DROPDOWN "Today" (filtro de período)
+   - Largura: ~150px
+   - Opções (TODAS OBRIGATÓRIAS):
+     * Today
+     * Yesterday
+     * Day Before Yesterday
+     * This Week
+     * Last Week
+     * Last 7 Days
+     * Last 14 Days
+     * This Month
+     * Last Month
+     * Month Before Last
+     * Last 30 Days
+     * Last 3 Months
+     * Last 6 Months
+     * Last 12 Months
+     * Year to Date
+     * Last Year
+     * All Time
+     * Custom
 
-// Configurar Mercado Livre
-const mercadoLivreClient = {
-  baseURL: 'https://api.mercadolibre.com',
-  getToken: async () => {
-    // Implementar renovação automática
-    return await tokenManager.getMercadoLivreToken();
-  }
-};
-PASSO 2: Sistema de Sincronização com Rate Limiting
-javascript// services/syncService.js
-class SyncService {
-  constructor() {
-    this.rateLimits = {
-      amazon: { orders: 6, inventory: 2 }, // por segundo
-      mercadolivre: { orders: 10, products: 10 } // por segundo
-    };
-  }
+2. DROPDOWN "All Markets"
+   - Opções: All Markets, Amazon, Mercado Livre
 
-  async syncAmazonOrders() {
-    // Respeitar rate limit: 6 req/segundo
-    const orders = await this.rateLimitedRequest(async () => {
-      return await amazonClient.callAPI({
-        operation: 'getOrders',
-        query: {
-          MarketplaceIds: ['A2Q3Y263D00KWC'],
-          CreatedAfter: new Date(Date.now() - 3600000).toISOString()
-        }
-      });
-    }, 'amazon', 'orders');
+3. DROPDOWN "All Orders"
+   - Opções: All Orders, Pending, Shipped, Delivered, Cancelled
 
-    // Processar e salvar no PostgreSQL
-    for (const order of orders.orders) {
-      await this.saveOrder(order);
-    }
-  }
+4. DROPDOWN "All Brands & Seller IDs"
+   - Listar brands/sellers disponíveis
 
-  async rateLimitedRequest(fn, marketplace, endpoint) {
-    // Implementar controle de rate limit
-    const limit = this.rateLimits[marketplace][endpoint];
-    // ... lógica de rate limiting
-    return await fn();
-  }
-}
-PASSO 3: Dashboard com Produtos Agrupados
-jsx// pages/Dashboard.jsx
-const Dashboard = () => {
-  const [products, setProducts] = useState([]);
-  const [realtimeOrders, setRealtimeOrders] = useState([]);
-  const [filters, setFilters] = useState({
-    marketplace: 'all',
-    dateRange: 'today',
-    country: 'BR'
-  });
+5. CAMPO DE BUSCA
+   - Placeholder: "Enter ASIN, SKU, Order or Keyword"
+   - Ícone de lupa à direita
+   - Borda cinza clara
 
-  // Buscar produtos agrupados por vendas
-  const fetchProducts = async () => {
-    const { data } = await api.get('/api/products/ranked', { params: filters });
-    setProducts(data);
-  };
+### LINHA DE TOTAIS (topo da tabela)
+- Fundo: Cinza escuro (#374151)
+- Texto: Branco
+- Altura: ~50px
+- Colunas alinhadas com a tabela principal:
+  * "Totals" (esquerda)
+  * Units: Número + "+X" em verde pequeno
+  * Revenue: Valor em dólar azul
+  * Profit: Valor em dólar verde
+  * ROI: "0%" com "Margin: XX%" abaixo em cinza
+  * ACOS: "0%" com "B/E: XX%" abaixo em cinza
 
-  // WebSocket para pedidos em tempo real
-  useEffect(() => {
-    const socket = io('/orders');
-    
-    socket.on('new-order', (order) => {
-      // Tocar som de notificação
-      playNotificationSound();
-      
-      // Adicionar à lista
-      setRealtimeOrders(prev => [order, ...prev].slice(0, 10));
-      
-      // Atualizar produtos
-      fetchProducts();
-    });
+### TABELA DE PRODUTOS
 
-    return () => socket.disconnect();
-  }, []);
+#### ESTRUTURA DAS COLUNAS:
+1. **Coluna PRODUTO** (350px largura)
+   - Thumbnail 60x60px com bordas arredondadas
+   - Logo do marketplace (Amazon/ML) no canto inferior direito do thumbnail (20x20px)
+   - Bandeira do país no canto superior esquerdo (16x16px circular)
+   - À direita da imagem:
+     * Nome do produto (fonte média, cor preta)
+     * SKU/ASIN abaixo (fonte pequena, cor cinza)
+   - Ícones de ações no final (gráfico, link, configurações)
 
-  return (
-    <div className="dashboard-container">
-      {/* Cards de Métricas */}
-      <MetricsCards />
-      
-      {/* Filtros Funcionais */}
-      <FiltersBar filters={filters} onChange={setFilters} />
-      
-      {/* Tabela de Produtos Rankeados */}
-      <ProductsTable products={products} />
-      
-      {/* Sidebar com Pedidos Real-time */}
-      <RealtimeOrdersSidebar orders={realtimeOrders} />
-    </div>
-  );
-};
-PASSO 4: Tabela de Produtos com Ranking
-jsx// components/ProductsTable.jsx
-const ProductsTable = ({ products }) => {
-  return (
-    <table className="products-table">
-      <thead>
-        <tr>
-          <th>Ranking</th>
-          <th>Produto</th>
-          <th>Vendas Totais</th>
-          <th>Vendas Hoje</th>
-          <th>Receita</th>
-          <th>Lucro</th>
-          <th>ROI</th>
-          <th>Estoque</th>
-        </tr>
-      </thead>
-      <tbody>
-        {products.map((product, index) => (
-          <tr key={product.id}>
-            <td>
-              <div className="rank-badge">#{index + 1}</div>
-            </td>
-            <td>
-              <div className="product-info">
-                <img 
-                  src={product.image_url || '/placeholder.png'} 
-                  onError={(e) => e.target.src = '/placeholder.png'}
-                />
-                <div>
-                  <h4>{product.name}</h4>
-                  <span>{product.sku} • {product.marketplace}</span>
-                </div>
-              </div>
-            </td>
-            <td className="text-center">
-              <strong>{product.total_units_sold}</strong>
-              <small>{product.total_orders} pedidos</small>
-            </td>
-            <td className="text-center">
-              {product.today_units || 0}
-            </td>
-            <td className="text-right">
-              {formatCurrency(product.total_revenue)}
-            </td>
-            <td className={`text-right ${product.total_profit >= 0 ? 'text-green' : 'text-red'}`}>
-              {formatCurrency(product.total_profit)}
-            </td>
-            <td>
-              <RoiBadge value={product.roi} />
-            </td>
-            <td>
-              <StockIndicator current={product.stock} alert={product.alert_level} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-PASSO 5: API Endpoints
-javascript// api/products/ranked.js
-app.get('/api/products/ranked', async (req, res) => {
-  const { marketplace, dateRange, country } = req.query;
-  
-  const query = `
-    SELECT 
-      p.*,
-      ps.total_orders,
-      ps.total_units_sold,
-      ps.total_revenue,
-      ps.total_profit,
-      ps.sales_rank,
-      COALESCE(i.quantity, 0) as stock,
-      COALESCE(
-        (SELECT SUM(quantity) FROM order_items oi 
-         JOIN orders o ON oi.order_id = o.id 
-         WHERE oi.product_id = p.id 
-         AND DATE(o.order_date) = CURRENT_DATE), 0
-      ) as today_units
-    FROM products p
-    JOIN product_sales_summary ps ON p.id = ps.product_id
-    LEFT JOIN inventory i ON p.id = i.product_id
-    WHERE p.tenant_id = $1
-      ${marketplace !== 'all' ? 'AND p.marketplace = $2' : ''}
-      ${country !== 'all' ? 'AND p.country_code = $3' : ''}
-    ORDER BY ps.total_units_sold DESC
-    LIMIT 100
-  `;
-  
-  const products = await db.query(query, [req.user.tenantId, marketplace, country]);
-  res.json(products.rows);
-});
-PASSO 6: Worker para Sincronização Contínua
-javascript// workers/realtimeSync.js
-const cron = require('node-cron');
+2. **Coluna UNITS** (120px, centralizada)
+   - Número principal grande
+   - "+X" em verde pequeno ao lado
+   - Ícone de refresh abaixo
 
-// Sincronizar pedidos a cada minuto (respeitando rate limits)
-cron.schedule('* * * * *', async () => {
-  const sync = new SyncService();
-  
-  try {
-    // Amazon: máximo 6 requisições
-    await sync.syncAmazonOrders();
-    
-    // Mercado Livre: máximo 10 requisições
-    await sync.syncMercadoLivreOrders();
-    
-    console.log('✅ Sincronização em tempo real completa');
-  } catch (error) {
-    console.error('❌ Erro na sincronização:', error);
-  }
-});
+3. **Coluna REVENUE** (150px, alinhada à direita)
+   - Valor em dólar ($XXX) em azul (#3B82F6)
+   - Ícone de coração verde abaixo
 
-// Sincronização completa a cada 15 minutos
-cron.schedule('*/15 * * * *', async () => {
-  await fullSync();
-});
-🔧 CHECKLIST DE IMPLEMENTAÇÃO
-Configuração Inicial
+4. **Coluna PROFIT** (150px, alinhada à direita)
+   - Valor em dólar
+   - Verde (#10B981) se positivo com ▲
+   - Vermelho (#EF4444) se negativo com ▼
+   - Ícone de lixeira abaixo
 
- Criar arquivo .env com todas as credenciais
- Configurar PostgreSQL com as tabelas necessárias
- Instalar dependências: npm install amazon-sp-api bull socket.io pg redis
- Configurar Redis para cache e filas
+5. **Coluna ROI** (120px, centralizada)
+   - "0%" como texto principal
+   - "Margin: XX%" abaixo em cinza pequeno
+   - Sem ícones
 
-Backend
+6. **Coluna ACOS** (120px, centralizada)
+   - "0%" como texto principal
+   - "B/E: XX%" abaixo em cinza pequeno
+   - Ícone de busca no final
 
- Implementar TokenManager com renovação automática
- Criar serviços de sincronização com rate limiting
- Implementar WebSocket server para real-time
- Criar endpoints da API REST
- Configurar workers e cron jobs
+#### ESTILO DA TABELA:
+- Linhas alternadas: branco e cinza muito claro (#F9FAFB)
+- Hover: fundo cinza claro (#F3F4F6)
+- Padding vertical: 12px por linha
+- Bordas: linha fina cinza clara entre linhas
+- Sem bordas verticais
 
-Frontend
+### CORES EXATAS:
+- Verde header: #16A34A
+- Cinza escuro (totals): #374151
+- Azul revenue: #3B82F6
+- Verde profit: #10B981
+- Vermelho loss: #EF4444
+- Cinza texto secundário: #6B7280
+- Fundo alternado: #F9FAFB
 
- Implementar tabela com produtos rankeados
- Adicionar filtros funcionais
- Criar sidebar de pedidos em tempo real
- Implementar notificações sonoras
- Adicionar loading states e error handling
+### COMPORTAMENTOS:
+1. Produtos ordenados por TOTAL DE VENDAS (maior primeiro)
+2. Filtros atualizam dados em tempo real
+3. Hover mostra tooltip com mais informações
+4. Clique no produto abre detalhes
+5. Paginação no rodapé (20 produtos por página)
 
-Testes
+### DADOS OBRIGATÓRIOS DE CADA PRODUTO:
+- image_url (com fallback para placeholder)
+- marketplace_logo 
+- country_flag
+- product_name
+- sku/asin
+- units_sold
+- units_variation (+X)
+- revenue (formatado em dólar)
+- profit (formatado em dólar com cor)
+- roi_percentage
+- profit_margin
+- acos
+- break_even
 
- Testar sincronização com APIs reais
- Verificar rate limiting funcionando
- Confirmar atualização em tempo real
- Validar cálculos de ranking
- Testar em mobile
-
-📊 RESULTADO ESPERADO
-
-Tabela de produtos ordenada por vendas (mais vendidos primeiro)
-Imagens carregando com fallback para placeholder
-Valores reais vindos do banco de dados
-Filtros funcionando e atualizando dados
-Notificações em tempo real de novos pedidos
-Respeito aos rate limits das APIs
-Performance < 2 segundos de carregamento
-
-⚠️ PONTOS CRÍTICOS
-
-NUNCA usar dados mockados - sempre dados reais
-Respeitar rate limits - Amazon: 6/s, ML: 10/s
-Cache inteligente - Redis para métricas
-Isolamento multi-tenant - segurança dos dados
-Logs detalhados - para debug em produção
+IMPORTANTE: 
+- NÃO incluir coluna de ranking
+- Todos os valores devem vir do PostgreSQL
+- Implementar loading skeleton enquanto carrega
+- Performance com virtual scrolling para muitos produtos
 
 
-Use este documento único para implementar o dashboard completo. Todos os requisitos estão consolidados aqui de forma clara e objetiva.
+COMPONENTES A CRIAR/MODIFICAR:
+
+1. Dashboard.jsx - estrutura principal
+2. FiltersBar.jsx - barra com todos os dropdowns
+3. TotalsRow.jsx - linha de totais no topo
+4. ProductsTable.jsx - tabela principal
+5. ProductRow.jsx - linha individual de produto
+6. TimeFilter.jsx - dropdown com TODAS as opções de tempo
+
+QUERIES SQL NECESSÁRIAS:
+- Buscar produtos com todas as métricas agregadas
+- Ordenar por total_units_sold DESC
+- Incluir JOINs com inventory, orders, advertising_metrics
+- Calcular profit margin e break-even
+
+FORMATAÇÕES:
+- Moeda: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+- Porcentagem: valor.toFixed(1) + '%'
+- Números: valor.toLocaleString()
+
+O resultado DEVE ser visualmente IDÊNTICO ao descrito acima.

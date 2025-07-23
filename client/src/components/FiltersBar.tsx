@@ -1,100 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import TimeFilter from './TimeFilter';
 
 interface FiltersBarProps {
   onFiltersChange: (filters: {
-    marketplace: string;
     period: string;
-    country: string;
+    marketplace: string;
+    orderStatus: string;
+    brand: string;
+    search: string;
   }) => void;
 }
 
 const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
-  const [selectedMarketplace, setSelectedMarketplace] = useState('all');
-  const [selectedPeriod, setSelectedPeriod] = useState('today');
-  const [selectedCountry, setSelectedCountry] = useState('all');
+  const [period, setPeriod] = useState('today');
+  const [marketplace, setMarketplace] = useState('all');
+  const [orderStatus, setOrderStatus] = useState('all');
+  const [brand, setBrand] = useState('all');
+  const [search, setSearch] = useState('');
+
+  // Auto-aplicar filtros quando mudam
+  useEffect(() => {
+    onFiltersChange({
+      period,
+      marketplace,
+      orderStatus,
+      brand,
+      search
+    });
+  }, [period, marketplace, orderStatus, brand, search]);
 
   return (
-    <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-      <div className="relative">
+    <div className="bg-white p-4 border-b border-gray-200">
+      <div className="flex items-center gap-3">
+        {/* Time Period Filter */}
+        <TimeFilter value={period} onChange={setPeriod} />
+
+        {/* Markets Filter */}
         <select
-          value={selectedMarketplace}
-          onChange={(e) => setSelectedMarketplace(e.target.value)}
-          className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-primary-orange hover:bg-gray-50"
+          value={marketplace}
+          onChange={(e) => setMarketplace(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
         >
-          <option value="all">Todos Marketplaces</option>
+          <option value="all">All Markets</option>
           <option value="amazon">Amazon</option>
           <option value="mercadolivre">Mercado Livre</option>
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-          </svg>
-        </div>
-      </div>
 
-      <div className="relative">
+        {/* Order Status Filter */}
         <select
-          value={selectedPeriod}
-          onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-primary-orange hover:bg-gray-50"
+          value={orderStatus}
+          onChange={(e) => setOrderStatus(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
         >
-          <option value="today">Hoje</option>
-          <option value="yesterday">Ontem</option>
-          <option value="last7days">Últimos 7 dias</option>
-          <option value="last30days">Últimos 30 dias</option>
-          <option value="thisMonth">Este mês</option>
+          <option value="all">All Orders</option>
+          <option value="pending">Pending</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-          </svg>
-        </div>
-      </div>
 
-      <div className="relative">
+        {/* Brands Filter */}
         <select
-          value={selectedCountry}
-          onChange={(e) => setSelectedCountry(e.target.value)}
-          className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-primary-orange hover:bg-gray-50"
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
         >
-          <option value="all">Todos os Países</option>
-          <option value="US">Estados Unidos</option>
-          <option value="BR">Brasil</option>
-          <option value="MX">México</option>
+          <option value="all">All Brands & Seller IDs</option>
+          {/* Brands serão populados dinamicamente */}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-          </svg>
+
+        {/* Search Field */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Enter ASIN, SKU, Order or Keyword"
+            className="w-full px-3 py-2 pl-3 pr-10 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
-
-      <button 
-        onClick={() => onFiltersChange({
-          marketplace: selectedMarketplace,
-          period: selectedPeriod,
-          country: selectedCountry
-        })}
-        className="bg-primary-orange text-white px-4 py-2 rounded-lg hover:shadow-hover font-medium"
-      >
-        Aplicar Filtros
-      </button>
-
-      <button 
-        onClick={() => {
-          setSelectedMarketplace('all');
-          setSelectedPeriod('today');
-          setSelectedCountry('all');
-          onFiltersChange({
-            marketplace: 'all',
-            period: 'today',
-            country: 'all'
-          });
-        }}
-        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium"
-      >
-        Limpar Filtros
-      </button>
     </div>
   );
 };
