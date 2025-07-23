@@ -1,0 +1,135 @@
+GUIA DE MIGRAÇÃO - COOLIFY POSTGRESQL
+=====================================
+
+DOMÍNIO: appproft.com
+
+PASSO 1: ACESSAR O SERVIDOR COOLIFY
+------------------------------------
+# Conecte-se ao servidor onde o Coolify está instalado
+ssh seu-usuario@ip-do-servidor-coolify
+
+# Ou se você tiver configurado um alias
+ssh coolify-server
+
+
+PASSO 2: LISTAR CONTAINERS DO POSTGRESQL
+----------------------------------------
+# Encontre o container do PostgreSQL
+docker ps | grep postgres
+
+# O nome do container geralmente segue o padrão:
+# coolify-postgres-[identificador] ou similar
+
+
+PASSO 3: ACESSAR O CONTAINER POSTGRESQL
+---------------------------------------
+# Substitua [container-name] pelo nome real do container
+docker exec -it [container-name] psql -U postgres -d [database-name]
+
+# Se você não souber o nome do banco, primeiro liste os bancos:
+docker exec -it [container-name] psql -U postgres -c "\l"
+
+
+PASSO 4: EXECUTAR A MIGRAÇÃO
+-----------------------------
+# Dentro do psql, execute os comandos na ordem:
+
+-- 1. Verificar estrutura atual
+\d api_tokens
+
+-- 2. Adicionar nova coluna credentials
+ALTER TABLE api_tokens 
+ADD COLUMN IF NOT EXISTS credentials JSONB;
+
+-- 3. Migrar dados existentes
+UPDATE api_tokens 
+SET credentials = jsonb_build_object(
+  'access_token', access_token,
+  'refresh_token', refresh_token
+)
+WHERE credentials IS NULL 
+AND (access_token IS NOT NULL OR refresh_token IS NOT NULL);
+
+-- 4. Criar índice para performance
+CREATE INDEX IF NOT EXISTS idx_api_tokens_service ON api_tokens(user_id, service);
+
+-- 5. Verificar resultado
+SELECT user_id, service, 
+       CASE WHEN credentials IS NOT NULL THEN 'Configurado' ELSE 'Não configurado' END as status
+FROM api_tokens;
+
+-- 6. Sair do psql
+\q
+
+
+PASSO 5: VERIFICAR STATUS DO DEPLOYMENT
+---------------------------------------
+# No painel do Coolify ou via CLI:
+
+# Verificar logs da aplicação
+docker logs [app-container-name] --tail 50
+
+# Verificar se a aplicação está rodando
+curl -I https://appproft.com
+
+# Ou verificar health check
+curl https://appproft.com/api/health
+
+
+PASSO 6: TESTAR A APLICAÇÃO
+----------------------------
+1. Acesse https://appproft.com
+2. Faça login
+3. Teste a funcionalidade de conexão com APIs
+4. Verifique se as credenciais estão sendo salvas corretamente
+
+
+PASSO 7: BACKUP E LIMPEZA (OPCIONAL)
+------------------------------------
+# Após confirmar que tudo está funcionando:
+
+# Fazer backup antes de remover colunas antigas
+docker exec [container-name] pg_dump -U postgres [database-name] > backup_antes_limpeza.sql
+
+# Remover colunas antigas (APENAS após confirmar funcionamento)
+docker exec -it [container-name] psql -U postgres -d [database-name] -c "
+ALTER TABLE api_tokens DROP COLUMN IF EXISTS access_token;
+ALTER TABLE api_tokens DROP COLUMN IF EXISTS refresh_token;
+"
+
+
+COMANDOS ÚTEIS COOLIFY
+----------------------
+# Reiniciar aplicação se necessário
+coolify app:restart [app-id]
+
+# Ver logs em tempo real
+coolify app:logs [app-id] --follow
+
+# Verificar variáveis de ambiente
+coolify app:env [app-id]
+
+
+TROUBLESHOOTING
+---------------
+1. Se a migração falhar:
+   - Verifique se o usuário tem permissões adequadas
+   - Confirme o nome correto da tabela e banco de dados
+   - Verifique se já existe uma migração parcial
+
+2. Se a aplicação não conectar após migração:
+   - Verifique os logs da aplicação
+   - Confirme que as variáveis de ambiente estão corretas
+   - Teste a conexão com o banco manualmente
+
+3. Se precisar reverter:
+   - Use o backup criado antes das alterações
+   - Ou execute um rollback manual recriando as colunas antigas
+
+
+NOTAS IMPORTANTES
+-----------------
+- Sempre faça backup antes de executar migrações
+- Teste em ambiente de staging primeiro se disponível
+- Monitore os logs durante e após a migração
+- Mantenha o backup por pelo menos 7 dias após a migração
