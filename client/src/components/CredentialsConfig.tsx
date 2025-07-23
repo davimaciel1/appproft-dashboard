@@ -38,13 +38,13 @@ const CredentialsConfig: React.FC = () => {
     clientId: '',
     clientSecret: '',
     refreshToken: '',
-    marketplaceCode: 'BR' // Brasil como padrão
+    marketplaceCode: 'US' // Estados Unidos como padrão
   });
   
   // Lista de marketplaces disponíveis
   const marketplaces = [
-    { code: 'BR', name: 'Brasil' },
     { code: 'US', name: 'Estados Unidos' },
+    { code: 'BR', name: 'Brasil' },
     { code: 'CA', name: 'Canadá' },
     { code: 'MX', name: 'México' },
     { code: 'UK', name: 'Reino Unido' },
@@ -197,6 +197,9 @@ const CredentialsConfig: React.FC = () => {
       return;
     }
 
+    // Debug: verificar qual marketplace está sendo usado
+    console.log('Marketplace selecionado:', amazonForm.marketplaceCode);
+
     // Mapeamento simplificado de URLs de autorização
     const authUrls: Record<string, string> = {
       'BR': 'https://sellercentral.amazon.com.br',
@@ -213,9 +216,11 @@ const CredentialsConfig: React.FC = () => {
       'SG': 'https://sellercentral.amazon.sg'
     };
 
-    const baseUrl = authUrls[amazonForm.marketplaceCode] || authUrls['BR'];
+    const baseUrl = authUrls[amazonForm.marketplaceCode] || authUrls['US'];
     const state = `appproft_${Date.now()}_${amazonForm.marketplaceCode}`;
     const url = `${baseUrl}/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&version=beta`;
+    
+    console.log('URL gerada:', url);
     
     setAuthorizationUrl(url);
     setAuthorizationStep('waiting');
