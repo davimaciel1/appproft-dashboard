@@ -67,7 +67,7 @@ app.use('/api/token-auth', require('./routes/token-auth'));
 app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
 app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
 app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
-app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard'));
+app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard-fallback'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
 app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
 app.use('/auth', require('./routes/auth-callback'));
@@ -102,11 +102,21 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   secureLogger.info('Servidor iniciado com sucesso', { port: PORT });
   
+  // Executar migração automática
+  try {
+    const autoMigrate = require('./db/auto-migrate');
+    await autoMigrate();
+    secureLogger.info('Verificação de migração concluída');
+  } catch (error) {
+    secureLogger.error('Erro na migração automática', { error: error.message });
+  }
+  
   // Sistema de renovação automática de tokens
   tokenRenewalService.startAutoRenewal();
   secureLogger.info('Sistema de renovação automática de tokens iniciado');
   
-  // Start real-time sync worker
+  // Start real-time sync worker (desabilitado temporariamente até ter as tabelas)
+  /*
   try {
     const realtimeSyncWorker = require('./workers/realtimeSync');
     await realtimeSyncWorker.start();
@@ -114,6 +124,7 @@ server.listen(PORT, async () => {
   } catch (error) {
     secureLogger.error('Erro ao iniciar worker de sincronização', { error: error.message });
   }
+  */
 });
 
 module.exports = { io };
