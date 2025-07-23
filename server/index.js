@@ -1,6 +1,20 @@
 require('dotenv').config({ path: '../.env' });
 console.log('Server started with USE_MOCK_DATA:', process.env.USE_MOCK_DATA);
-console.log('Amazon Client ID configured:', process.env.AMAZON_SP_API_CLIENT_ID ? 'Yes' : 'No');
+
+// Verificar credenciais LWA obrigatórias
+const lwaClientId = process.env.LWA_CLIENT_ID || process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
+const lwaClientSecret = process.env.LWA_CLIENT_SECRET || process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+
+console.log('=== AMAZON LWA CREDENTIALS CHECK ===');
+console.log('LWA Client ID configured:', !!lwaClientId ? 'Yes' : 'No');
+console.log('LWA Client Secret configured:', !!lwaClientSecret ? 'Yes' : 'No');
+
+if (!lwaClientId || !lwaClientSecret) {
+  console.error('❌ ERRO CRÍTICO: LWA Client ID e Client Secret são obrigatórios para OAuth Amazon!');
+  console.error('Configure no .env: LWA_CLIENT_ID e LWA_CLIENT_SECRET');
+} else {
+  console.log('✅ Credenciais LWA configuradas corretamente');
+}
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -57,6 +71,7 @@ app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/das
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
 app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
 app.use('/auth', require('./routes/auth-callback'));
+app.use('/api/lwa', require('./routes/lwa-check'));
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');

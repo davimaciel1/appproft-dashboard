@@ -116,8 +116,8 @@ class TokenRenewalService {
   // Renovar token da Amazon
   async renewAmazonToken(credentialId, refreshToken) {
     return new Promise((resolve, reject) => {
-      const clientId = process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
-      const clientSecret = process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+      const clientId = process.env.LWA_CLIENT_ID || process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
+      const clientSecret = process.env.LWA_CLIENT_SECRET || process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
 
       const postData = querystring.stringify({
         grant_type: 'refresh_token',

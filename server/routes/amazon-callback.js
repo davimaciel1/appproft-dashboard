@@ -213,9 +213,15 @@ router.get('/check-callback', async (req, res) => {
 // Função para trocar código por token
 async function exchangeCodeForToken(code) {
   return new Promise((resolve, reject) => {
-    // Pegar credenciais do .env
-    const clientId = process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
-    const clientSecret = process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+    // Pegar credenciais LWA do .env (obrigatório para OAuth)
+    const clientId = process.env.LWA_CLIENT_ID || process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
+    const clientSecret = process.env.LWA_CLIENT_SECRET || process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+    
+    console.log('Usando credenciais LWA para token exchange:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      clientIdSource: process.env.LWA_CLIENT_ID ? 'LWA_CLIENT_ID' : 'AMAZON_CLIENT_ID'
+    });
 
     const postData = querystring.stringify({
       grant_type: 'authorization_code',
