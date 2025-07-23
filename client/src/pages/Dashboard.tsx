@@ -22,10 +22,10 @@ const Dashboard: React.FC = () => {
     newOrders: 0
   });
   
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [realtimeOrders, setRealtimeOrders] = useState([]);
+  const [realtimeOrders, setRealtimeOrders] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     marketplace: 'all',
     period: 'today',
