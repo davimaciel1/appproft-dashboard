@@ -113,18 +113,35 @@ class TokenRenewalService {
     }
   }
 
-  // Renovar token da Amazon
+  // Renovar token da Amazon usando credenciais específicas do usuário
   async renewAmazonToken(credentialId, refreshToken) {
-    return new Promise((resolve, reject) => {
-      const clientId = process.env.LWA_CLIENT_ID || process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
-      const clientSecret = process.env.LWA_CLIENT_SECRET || process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+    return new Promise(async (resolve, reject) => {
+      try {
+        // ✅ CORRETO: Buscar credenciais específicas do usuário no banco
+        const credResult = await pool.query(
+          'SELECT client_id, client_secret FROM marketplace_credentials WHERE id = $1',
+          [credentialId]
+        );
+        
+        if (credResult.rows.length === 0) {
+          reject(new Error('Credenciais não encontradas'));
+          return;
+        }
+        
+        const clientId = credResult.rows[0].client_id;
+        const clientSecret = credResult.rows[0].client_secret;
+        
+        if (!clientId || !clientSecret) {
+          reject(new Error('Client ID ou Client Secret não configurados para este usuário'));
+          return;
+        }
 
-      const postData = querystring.stringify({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: clientId,
-        client_secret: clientSecret
-      });
+        const postData = querystring.stringify({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: clientId,
+          client_secret: clientSecret
+        });
 
       const options = {
         hostname: 'api.amazon.com',
@@ -177,9 +194,12 @@ class TokenRenewalService {
         });
       });
 
-      req.on('error', reject);
-      req.write(postData);
-      req.end();
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 

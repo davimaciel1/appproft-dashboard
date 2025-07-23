@@ -130,8 +130,30 @@ router.get('/check-callback', async (req, res) => {
       return res.json({ hasCallback: false });
     }
 
-    // Trocar código por refresh token
-    const tokenData = await exchangeCodeForToken(foundCallback.code);
+    // ✅ OBTER CREDENCIAIS DO USUÁRIO DO BANCO DE DADOS
+    const userId = req.user?.id || 1; // TODO: Pegar do JWT token em produção
+    
+    // Buscar credenciais LWA do usuário no banco
+    const userCredsResult = await pool.query(
+      'SELECT client_id, client_secret FROM marketplace_credentials WHERE user_id = $1 AND marketplace = $2',
+      [userId, 'amazon']
+    );
+    
+    if (userCredsResult.rows.length === 0) {
+      return res.json({ 
+        hasCallback: false, 
+        error: 'Credenciais Amazon não encontradas. Configure primeiro no painel de credenciais.' 
+      });
+    }
+    
+    const userCreds = userCredsResult.rows[0];
+    
+    // Trocar código por refresh token usando credenciais específicas do usuário
+    const tokenData = await exchangeCodeForToken(
+      foundCallback.code, 
+      userCreds.client_id, 
+      userCreds.client_secret
+    );
 
     if (tokenData.refresh_token) {
       // Obter marketplace do state armazenado
@@ -210,18 +232,23 @@ router.get('/check-callback', async (req, res) => {
   }
 });
 
-// Função para trocar código por token
-async function exchangeCodeForToken(code) {
+// Função para trocar código por token usando credenciais específicas do usuário
+async function exchangeCodeForToken(code, userClientId, userClientSecret) {
   return new Promise((resolve, reject) => {
-    // Pegar credenciais LWA do .env (obrigatório para OAuth)
-    const clientId = process.env.LWA_CLIENT_ID || process.env.AMAZON_CLIENT_ID || process.env.AMAZON_SP_API_CLIENT_ID;
-    const clientSecret = process.env.LWA_CLIENT_SECRET || process.env.AMAZON_CLIENT_SECRET || process.env.AMAZON_SP_API_CLIENT_SECRET;
+    // ✅ CORRETO: Usar credenciais específicas do usuário (não globais)
+    const clientId = userClientId;
+    const clientSecret = userClientSecret;
     
-    console.log('Usando credenciais LWA para token exchange:', {
+    console.log('Usando credenciais LWA específicas do usuário para token exchange:', {
       hasClientId: !!clientId,
       hasClientSecret: !!clientSecret,
-      clientIdSource: process.env.LWA_CLIENT_ID ? 'LWA_CLIENT_ID' : 'AMAZON_CLIENT_ID'
+      clientIdPrefix: clientId ? clientId.substring(0, 20) + '...' : 'none'
     });
+    
+    if (!clientId || !clientSecret) {
+      reject(new Error('Credenciais LWA do usuário são obrigatórias'));
+      return;
+    }
 
     const postData = querystring.stringify({
       grant_type: 'authorization_code',
