@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgres://postgres:icKgRpuOV8Hhfn71xWbzfdJKwNhrsVjhIa6gxZwiaHrDhOSZ8vQXzOm2Exa5W4zk@sscowkg4g8swg8cw0gocwcgk:5432/postgres
+      - USE_MOCK_DATA=false
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      - NODE_ENV=production
+      # Amazon
+      - AMAZON_CLIENT_ID=${AMAZON_CLIENT_ID}
+      - AMAZON_CLIENT_SECRET=${AMAZON_CLIENT_SECRET}
+      - AMAZON_REFRESH_TOKEN=${AMAZON_REFRESH_TOKEN}
+      - AMAZON_SELLER_ID=${AMAZON_SELLER_ID}
+      - AMAZON_REGION=${AMAZON_REGION}
+      - SP_API_AWS_ACCESS_KEY=${SP_API_AWS_ACCESS_KEY}
+      - SP_API_AWS_SECRET_KEY=${SP_API_AWS_SECRET_KEY}
+      - SP_API_MARKETPLACE_ID=${SP_API_MARKETPLACE_ID}
+      # Mercado Livre
+      - ML_CLIENT_ID=${ML_CLIENT_ID}
+      - ML_CLIENT_SECRET=${ML_CLIENT_SECRET}
+      - ML_REFRESH_TOKEN=${ML_REFRESH_TOKEN}
+      - ML_ACCESS_TOKEN=${ML_ACCESS_TOKEN}
+      - ML_SELLER_ID=${ML_SELLER_ID}
+    # depends_on removido pois o banco está no Coolify
+    restart: unless-stopped
+
+  # Banco de dados agora está no Coolify, não precisa mais deste serviço local
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=amazonsalestracker
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./database.sql:/docker-entrypoint-initdb.d/init.sql
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:

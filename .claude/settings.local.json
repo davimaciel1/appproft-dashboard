@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-react-app:*)",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(set USE_MOCK_DATA=true)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)",
+      "Bash(kill-ports.bat)",
+      "Bash(.kill-ports.bat)",
+      "Bash(powershell:*)",
+      "Bash(curl:*)",
+      "Bash(choco install:*)",
+      "Bash(winget:*)",
+      "Bash(setup-database.bat)",
+      "Bash(pkill:*)",
+      "Bash(npm run server:*)",
+      "Bash(PORT=3002 node index.js)",
+      "Bash(PORT=3000 npm start)",
+      "Bash(PORT=3003 npm start)",
+      "Bash(PORT=3004 node index.js)",
+      "Bash(npm start)",
+      "Bash(ls:*)",
+      "Bash(set PORT=3003)",
+      "Bash(set PORT=3005)",
+      "Bash(git init:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)"
+    ],
+    "deny": []
+  }
+}

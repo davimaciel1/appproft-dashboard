@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Obter Token Mercado Livre</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .step {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .button {
+            background: #FF8C00;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Renovar Token do Mercado Livre</h1>
+    
+    <div class="step">
+        <h2>Passo 1: Autorizar Aplicação</h2>
+        <p>Clique no botão abaixo para autorizar sua aplicação no Mercado Livre:</p>
+        <a href="https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=6957271904463263&redirect_uri=https://appproft.com/api/marketplace/mercadolivre/callback" 
+           target="_blank" 
+           class="button">
+            Autorizar no Mercado Livre
+        </a>
+        <p><small>Você será redirecionado para o Mercado Livre para fazer login e autorizar.</small></p>
+    </div>
+    
+    <div class="step">
+        <h2>Passo 2: Copiar o Código</h2>
+        <p>Após autorizar, você será redirecionado para uma URL como:</p>
+        <code>https://appproft.com/api/marketplace/mercadolivre/callback?code=TG-xxxxx</code>
+        <p>Copie apenas o código após <code>code=</code> e cole aqui:</p>
+        <input type="text" id="authCode" placeholder="TG-xxxxx" style="width: 300px; padding: 5px;">
+        <button onclick="getToken()">Obter Token</button>
+    </div>
+    
+    <div class="step" id="result" style="display: none;">
+        <h2>Passo 3: Atualizar .env</h2>
+        <p>Copie os valores abaixo e atualize seu arquivo .env:</p>
+        <textarea id="tokens" readonly></textarea>
+        <button onclick="copyToClipboard()">Copiar</button>
+    </div>
+    
+    <script>
+    async function getToken() {
+        const code = document.getElementById('authCode').value;
+        if (!code) {
+            alert('Por favor, insira o código');
+            return;
+        }
+        
+        try {
+            const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    grant_type: 'authorization_code',
+                    client_id: '6957271904463263',
+                    client_secret: 'zDU6PhsFfUdU4PvagEtDzYCY3FP7l8R2',
+                    code: code,
+                    redirect_uri: 'https://appproft.com/api/marketplace/mercadolivre/callback'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.access_token) {
+                document.getElementById('tokens').value = 
+`ML_ACCESS_TOKEN=${data.access_token}
+ML_REFRESH_TOKEN=${data.refresh_token}`;
+                document.getElementById('result').style.display = 'block';
+            } else {
+                alert('Erro: ' + JSON.stringify(data));
+            }
+        } catch (error) {
+            alert('Erro: ' + error.message);
+        }
+    }
+    
+    function copyToClipboard() {
+        document.getElementById('tokens').select();
+        document.execCommand('copy');
+        alert('Copiado!');
+    }
+    </script>
+</body>
+</html>
