@@ -80,8 +80,7 @@ const corsOptions = {
       callback(null, true);
     } else {
       secureLogger.warn('CORS bloqueado', {
-        origin,
-        ip: req.ip
+        origin
       });
       callback(new Error('Não permitido pelo CORS'));
     }
