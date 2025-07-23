@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Header from './components/Header';
+import CredentialsConfig from './components/CredentialsConfig';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -39,6 +40,15 @@ function App() {
               <>
                 <Header />
                 <Dashboard />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/credentials" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <CredentialsConfig />
               </>
             ) : <Navigate to="/login" />
           } />

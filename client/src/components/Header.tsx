@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Header: React.FC = () => {
+  const navigate = useNavigate();
+  
   return (
     <header className="bg-white shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -9,11 +12,17 @@ const Header: React.FC = () => {
         </div>
         
         <nav className="flex items-center space-x-6">
-          <button className="text-gray-600 hover:text-gray-800 font-medium">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
             Dashboard
           </button>
-          <button className="text-gray-600 hover:text-gray-800 font-medium">
-            Configurações
+          <button 
+            onClick={() => navigate('/credentials')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Credenciais
           </button>
           <button 
             onClick={() => {
