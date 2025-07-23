@@ -43,9 +43,6 @@ const Dashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
       const [metricsRes, productsRes] = await Promise.all([
         api.get('/api/dashboard/metrics'),
         api.get('/api/dashboard/products')

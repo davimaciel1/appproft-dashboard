@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface Credentials {
-  amazon: { configured: boolean; sellerId?: string; marketplaceId?: string };
+  amazon: { configured: boolean; sellerId?: string; marketplaceCode?: string };
   mercadolivre: { configured: boolean; sellerId?: string };
 }
 
@@ -87,8 +87,7 @@ const CredentialsConfig: React.FC = () => {
         setAmazonForm(prev => ({
           ...prev,
           clientId: response.data.amazon.clientId || '',
-          sellerId: response.data.amazon.sellerId || '',
-          marketplaceId: response.data.amazon.marketplaceId || prev.marketplaceId
+          marketplaceCode: response.data.amazon.marketplaceCode || prev.marketplaceCode
         }));
       }
     } catch (error) {
