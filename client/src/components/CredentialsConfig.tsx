@@ -21,7 +21,7 @@ interface MlForm {
 }
 
 interface Message {
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'warning';
   text: string;
 }
 
@@ -218,7 +218,18 @@ const CredentialsConfig: React.FC = () => {
 
     const baseUrl = authUrls[amazonForm.marketplaceCode] || authUrls['US'];
     const state = `appproft_${Date.now()}_${amazonForm.marketplaceCode}`;
-    const url = `${baseUrl}/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&version=beta`;
+    const redirectUri = 'https://appproft.com/auth/callback';
+    
+    // Tentar primeiro com a URL padrão do Seller Central
+    const url = `${baseUrl}/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+    
+    // Se não funcionar, podemos tentar a URL OAuth2 direta
+    // const oauthUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${amazonForm.clientId}&state=${state}&version=beta`;
+    
+    setMessage({ 
+      type: 'success', 
+      text: `Abrindo autorização para Amazon ${marketplaces.find(m => m.code === amazonForm.marketplaceCode)?.name}...` 
+    });
     
     console.log('URL gerada:', url);
     
@@ -231,6 +242,14 @@ const CredentialsConfig: React.FC = () => {
     
     // Abrir URL em nova aba
     window.open(url, '_blank');
+    
+    // Mostrar instruções adicionais se a página ficar em branco
+    setTimeout(() => {
+      setMessage({ 
+        type: 'warning', 
+        text: 'Se a página ficou em branco, tente: 1) Verificar se bloqueador de pop-up está ativo, 2) Clicar no link abaixo manualmente, 3) Certificar que o Client ID está correto na Amazon Developer Console' 
+      });
+    }, 3000);
   };
 
   const checkAuthorizationCallback = async () => {
@@ -326,6 +345,8 @@ const CredentialsConfig: React.FC = () => {
             <div className={`mb-4 p-4 rounded-md ${
               message.type === 'success' 
                 ? 'bg-green-50 text-green-800 border border-green-200' 
+                : message.type === 'warning'
+                ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
                 : 'bg-red-50 text-red-800 border border-red-200'
             }`}>
               {message.text}
@@ -401,13 +422,28 @@ const CredentialsConfig: React.FC = () => {
                     </p>
                     
                     {authorizationStep === 'initial' && (
-                      <button
-                        type="button"
-                        onClick={generateAmazonAuthUrl}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                      >
-                        Gerar Refresh Token
-                      </button>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={generateAmazonAuthUrl}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm mr-2"
+                        >
+                          Gerar Refresh Token
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const oauthUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${amazonForm.clientId}&state=appproft_${Date.now()}_${amazonForm.marketplaceCode}&version=beta`;
+                            console.log('Tentando URL alternativa:', oauthUrl);
+                            window.open(oauthUrl, '_blank');
+                            setAuthorizationStep('waiting');
+                            setAuthorizationUrl(oauthUrl);
+                          }}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                        >
+                          Tentar URL Alternativa
+                        </button>
+                      </div>
                     )}
                     
                     {authorizationStep === 'waiting' && (

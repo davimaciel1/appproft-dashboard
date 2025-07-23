@@ -56,6 +56,7 @@ app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/
 app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
 app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
+app.use('/auth', require('./routes/auth-callback'));
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');

@@ -11,21 +11,27 @@ const pendingCallbacks = new Map();
 // Endpoint de callback da Amazon
 router.get('/callback', async (req, res) => {
   try {
-    const { spapi_oauth_code, state, selling_partner_id } = req.query;
+    const { spapi_oauth_code, code, state, selling_partner_id } = req.query;
+    
+    // A Amazon pode enviar o código com diferentes nomes
+    const authCode = spapi_oauth_code || code;
     
     console.log('Amazon callback recebido:', {
-      hasCode: !!spapi_oauth_code,
+      hasCode: !!authCode,
+      spapi_oauth_code: !!spapi_oauth_code,
+      code: !!code,
       state,
-      sellerId: selling_partner_id
+      sellerId: selling_partner_id,
+      allParams: req.query
     });
 
-    if (!spapi_oauth_code) {
+    if (!authCode) {
       return res.status(400).send('Código de autorização não fornecido');
     }
 
     // Armazenar temporariamente
     pendingCallbacks.set(state, {
-      code: spapi_oauth_code,
+      code: authCode,
       sellerId: selling_partner_id,
       timestamp: Date.now()
     });
