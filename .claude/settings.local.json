@@ -51,7 +51,17 @@
       "Bash(git commit -m \"Fix module import errors by replacing DATABASE_ACCESS_CONFIG with pool\n\n- Update tokenRenewalService.js to use pool.query instead of executeSQL\n- Update amazon-callback.js to use pool.query instead of executeSQL  \n- Resolve MODULE_NOT_FOUND error in production deployment\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
       "Bash(find . -name \"*.js\" -exec grep -l \"amazonServiceNew\\|mercadolivreServiceNew\" {} ;)",
       "Bash(git commit -m \"Fix remaining deployment issues\n\n- Fix amazon.js import from amazonServiceNew to amazonService  \n- Set NODE_ENV=production and PORT=3000 for deployment\n- Ensure all service imports are correct for production\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(git commit -m \"Fix TypeScript error: change marketplaceId to marketplaceCode\n\n- Fix CredentialsConfig.tsx line 91: marketplaceId → marketplaceCode  \n- Update Credentials interface to use marketplaceCode instead of marketplaceId\n- Remove unused headers variable in Dashboard.tsx\n- Frontend build now completes successfully without TypeScript errors\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
+      "Bash(git commit -m \"Fix TypeScript error: change marketplaceId to marketplaceCode\n\n- Fix CredentialsConfig.tsx line 91: marketplaceId → marketplaceCode  \n- Update Credentials interface to use marketplaceCode instead of marketplaceId\n- Remove unused headers variable in Dashboard.tsx\n- Frontend build now completes successfully without TypeScript errors\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(NODE_ENV=development node verify-dashboard-data.js)",
+      "Bash(NODE_ENV=development node fix-credentials-format.js)",
+      "Bash(NODE_ENV=development node save-credentials-properly.js)",
+      "Bash(NODE_ENV=development node fix-credentials-final.js)",
+      "Bash(NODE_ENV=development node debug-credentials-endpoint.js)",
+      "Bash(grep:*)",
+      "Bash(set NODE_ENV=development)",
+      "Bash(set USE_MOCK_DATA=false)",
+      "Bash(set ENCRYPTION_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6)",
+      "Bash(tasklist)"
     ],
     "deny": []
   }

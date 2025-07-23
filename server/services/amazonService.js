@@ -151,19 +151,72 @@ class AmazonService {
       const inventoryResponse = await this.callSPAPI(inventoryPath);
       const inventory = inventoryResponse.payload?.inventorySummaries || [];
       
-      const products = inventory.slice(0, 10).map((item, index) => ({
-        ASIN: item.asin,
-        SellerSKU: item.fnSku || item.sku,
-        ProductName: `Produto Amazon ${item.asin || index + 1}`,
-        Price: 0,
-        SmallImage: null,
-        InStockSupplyQuantity: item.totalQuantity || 0,
-        QuantitySold: 0,
-        Revenue: 0
-      }));
+      // Buscar vendas dos últimos 30 dias para calcular unidades vendidas
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const orders = await this.getOrders(thirtyDaysAgo.toISOString());
+      
+      // Calcular vendas por ASIN
+      const salesByAsin = {};
+      for (const order of orders) {
+        if (order.OrderItems) {
+          for (const item of order.OrderItems) {
+            const asin = item.ASIN;
+            if (!salesByAsin[asin]) {
+              salesByAsin[asin] = {
+                unitsSold: 0,
+                revenue: 0
+              };
+            }
+            salesByAsin[asin].unitsSold += item.QuantityOrdered || 0;
+            salesByAsin[asin].revenue += parseFloat(item.ItemPrice?.Amount || 0) * (item.QuantityOrdered || 0);
+          }
+        }
+      }
+      
+      // Processar produtos com dados completos
+      const products = [];
+      
+      for (const item of inventory.slice(0, 50)) { // Aumentar para 50 produtos
+        const asin = item.asin;
+        const sales = salesByAsin[asin] || { unitsSold: 0, revenue: 0 };
+        
+        // Tentar buscar detalhes do catálogo para obter nome e imagem
+        let productDetails = {
+          title: `Produto Amazon ${asin}`,
+          imageUrl: null
+        };
+        
+        try {
+          // Buscar detalhes do produto
+          const catalogPath = `/catalog/2022-04-01/items/${asin}?marketplaceIds=${this.marketplaceId}&includedData=images,summaries`;
+          const catalogResponse = await this.callSPAPI(catalogPath);
+          
+          if (catalogResponse.payload) {
+            productDetails.title = catalogResponse.payload.summaries?.[0]?.itemName || productDetails.title;
+            productDetails.imageUrl = catalogResponse.payload.images?.[0]?.images?.[0]?.link || null;
+          }
+        } catch (e) {
+          // Se falhar, continuar com dados básicos
+          secureLogger.info('Não foi possível buscar detalhes do produto', { asin });
+        }
+        
+        products.push({
+          ASIN: asin,
+          SellerSKU: item.fnSku || item.sku,
+          ProductName: productDetails.title,
+          Price: 0,
+          SmallImage: { URL: productDetails.imageUrl },
+          ImageUrl: productDetails.imageUrl,
+          InStockSupplyQuantity: item.totalQuantity || 0,
+          QuantitySold: sales.unitsSold,
+          Revenue: sales.revenue
+        });
+      }
 
-      secureLogger.info('Produtos Amazon recuperados', { 
-        count: products.length 
+      secureLogger.info('Produtos Amazon recuperados com detalhes', { 
+        count: products.length,
+        withSales: Object.keys(salesByAsin).length
       });
 
       return products;

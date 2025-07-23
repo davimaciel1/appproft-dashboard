@@ -10,9 +10,11 @@ const credentialsService = new CredentialsService();
 router.get('/metrics', async (req, res) => {
   try {
     const userId = req.userId;
+    const { period = 'today', marketplace = 'all', country = 'all' } = req.query;
+    
     const [amazonOrders, mlOrders] = await Promise.all([
-      getAmazonMetrics(userId),
-      getMercadoLivreMetrics(userId)
+      marketplace === 'all' || marketplace === 'amazon' ? getAmazonMetrics(userId, period) : { todaysSales: 0, ordersCount: 0, unitsSold: 0, netProfit: 0, acos: 0, newOrders: 0 },
+      marketplace === 'all' || marketplace === 'mercadolivre' ? getMercadoLivreMetrics(userId, period) : { todaysSales: 0, ordersCount: 0, unitsSold: 0, netProfit: 0, acos: 0, newOrders: 0 }
     ]);
     
     const consolidatedMetrics = {
@@ -37,7 +39,7 @@ router.get('/metrics', async (req, res) => {
   }
 });
 
-async function getAmazonMetrics(userId) {
+async function getAmazonMetrics(userId, period = 'today') {
   try {
     // Busca credenciais do usuário diretamente do banco
     const pool = require('../db/pool');
@@ -60,10 +62,29 @@ async function getAmazonMetrics(userId) {
     };
     
     const amazonService = new AmazonService(credentials);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // Calcular data baseada no período
+    const startDate = new Date();
+    switch (period) {
+      case 'yesterday':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case 'last7days':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'last30days':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case 'thisMonth':
+        startDate.setDate(1);
+        break;
+      case 'today':
+      default:
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
   
-    const orders = await amazonService.getOrders(today.toISOString());
+    const orders = await amazonService.getOrders(startDate.toISOString());
   
   let todaysSales = 0;
   let unitsSold = 0;
@@ -96,18 +117,41 @@ async function getAmazonMetrics(userId) {
   }
 }
 
-async function getMercadoLivreMetrics(userId) {
+async function getMercadoLivreMetrics(userId, period = 'today') {
   try {
     // Busca credenciais do usuário
     const credentials = await credentialsService.getCredentials(userId, 'mercadolivre');
+    if (!credentials) {
+      return { todaysSales: 0, ordersCount: 0, unitsSold: 0, netProfit: 0, acos: 0, newOrders: 0 };
+    }
+    
     const mlService = new MercadoLivreService(credentials);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // Calcular data baseada no período
+    const startDate = new Date();
+    switch (period) {
+      case 'yesterday':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case 'last7days':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'last30days':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case 'thisMonth':
+        startDate.setDate(1);
+        break;
+      case 'today':
+      default:
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
   
     const orders = await mlService.getOrders();
   const todayOrders = orders.filter(order => {
     const orderDate = new Date(order.date_created);
-    return orderDate >= today;
+    return orderDate >= startDate;
   });
   
   let todaysSales = 0;
@@ -200,11 +244,11 @@ async function getAmazonProducts(userId) {
   
     return amazonProducts.map((product, index) => ({
       id: `amazon_${product.ASIN || index}`,
-      name: product.ProductName || 'Produto Amazon',
+      name: product.ProductName || `Produto Amazon ${product.ASIN}`,
       sku: product.ASIN || product.SellerSKU,
       marketplace: 'amazon',
-      country: 'BR',
-      image: product.SmallImage?.URL || null,
+      country: 'US', // Corrigido para US
+      image: product.SmallImage?.URL || product.ImageUrl || null,
       units: product.QuantitySold || 0,
       revenue: product.Revenue || 0,
       profit: (product.Revenue || 0) * 0.3,

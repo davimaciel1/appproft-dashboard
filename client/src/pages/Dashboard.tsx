@@ -22,7 +22,13 @@ const Dashboard: React.FC = () => {
   });
   
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    marketplace: 'all',
+    period: 'today',
+    country: 'all'
+  });
 
   useEffect(() => {
     fetchDashboardData();
@@ -41,21 +47,48 @@ const Dashboard: React.FC = () => {
     };
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (currentFilters = filters) => {
     try {
+      const params = new URLSearchParams();
+      if (currentFilters.period) params.append('period', currentFilters.period);
+      if (currentFilters.marketplace !== 'all') params.append('marketplace', currentFilters.marketplace);
+      if (currentFilters.country !== 'all') params.append('country', currentFilters.country);
+      
       const [metricsRes, productsRes] = await Promise.all([
-        api.get('/api/dashboard/metrics'),
-        api.get('/api/dashboard/products')
+        api.get(`/api/dashboard/metrics?${params.toString()}`),
+        api.get(`/api/dashboard/products?${params.toString()}`)
       ]);
       
       setMetrics(metricsRes.data);
       setProducts(productsRes.data.products);
+      applyFilters(productsRes.data.products, currentFilters);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast.error('Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = (productsData: any[], currentFilters: any) => {
+    let filtered = [...productsData];
+    
+    // Filtrar por marketplace
+    if (currentFilters.marketplace !== 'all') {
+      filtered = filtered.filter(p => p.marketplace === currentFilters.marketplace);
+    }
+    
+    // Filtrar por país
+    if (currentFilters.country !== 'all') {
+      filtered = filtered.filter(p => p.country === currentFilters.country);
+    }
+    
+    setFilteredProducts(filtered);
+  };
+
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+    fetchDashboardData(newFilters);
   };
 
   return (
@@ -82,8 +115,8 @@ const Dashboard: React.FC = () => {
             ) : (
               <>
                 <MetricsCards metrics={metrics} />
-                <FiltersBar />
-                <ProductsTable products={products} />
+                <FiltersBar onFiltersChange={handleFiltersChange} />
+                <ProductsTable products={filteredProducts.length > 0 ? filteredProducts : products} />
               </>
             )}
           </div>

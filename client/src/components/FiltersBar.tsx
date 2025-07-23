@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 
-const FiltersBar: React.FC = () => {
+interface FiltersBarProps {
+  onFiltersChange: (filters: {
+    marketplace: string;
+    period: string;
+    country: string;
+  }) => void;
+}
+
+const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
   const [selectedMarketplace, setSelectedMarketplace] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
-  const [selectedCountry, setSelectedCountry] = useState('BR');
+  const [selectedCountry, setSelectedCountry] = useState('all');
 
   return (
     <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
@@ -49,8 +57,9 @@ const FiltersBar: React.FC = () => {
           onChange={(e) => setSelectedCountry(e.target.value)}
           className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-primary-orange hover:bg-gray-50"
         >
-          <option value="BR">Brasil</option>
+          <option value="all">Todos os Países</option>
           <option value="US">Estados Unidos</option>
+          <option value="BR">Brasil</option>
           <option value="MX">México</option>
         </select>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -60,11 +69,30 @@ const FiltersBar: React.FC = () => {
         </div>
       </div>
 
-      <button className="bg-primary-orange text-white px-4 py-2 rounded-lg hover:shadow-hover font-medium">
+      <button 
+        onClick={() => onFiltersChange({
+          marketplace: selectedMarketplace,
+          period: selectedPeriod,
+          country: selectedCountry
+        })}
+        className="bg-primary-orange text-white px-4 py-2 rounded-lg hover:shadow-hover font-medium"
+      >
         Aplicar Filtros
       </button>
 
-      <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium">
+      <button 
+        onClick={() => {
+          setSelectedMarketplace('all');
+          setSelectedPeriod('today');
+          setSelectedCountry('all');
+          onFiltersChange({
+            marketplace: 'all',
+            period: 'today',
+            country: 'all'
+          });
+        }}
+        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium"
+      >
         Limpar Filtros
       </button>
     </div>
