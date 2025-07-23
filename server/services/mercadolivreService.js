@@ -191,4 +191,4 @@ class MercadoLivreService {
   }
 }
 
-module.exports = new MercadoLivreService();
+module.exports = MercadoLivreService;

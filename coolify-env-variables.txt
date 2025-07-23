@@ -1,0 +1,38 @@
+VARIÁVEIS DE AMBIENTE PARA COOLIFY
+===================================
+
+Adicione estas variáveis no painel do Coolify:
+
+# Configuração Principal
+USE_MOCK_DATA=true
+NODE_ENV=production
+PORT=3000
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Database (já deve estar configurado automaticamente)
+# DATABASE_URL é fornecida automaticamente pelo Coolify
+
+# Amazon SP-API (adicione apenas se for usar dados reais)
+# AMAZON_SP_API_CLIENT_ID=seu_client_id
+# AMAZON_SP_API_CLIENT_SECRET=seu_client_secret
+# AMAZON_REFRESH_TOKEN=seu_refresh_token
+# AMAZON_SELLER_ID=seu_seller_id
+# AWS_SELLING_PARTNER_ACCESS_KEY_ID=sua_access_key
+# AWS_SELLING_PARTNER_SECRET_ACCESS_KEY=sua_secret_key
+# AWS_SELLING_PARTNER_ROLE=arn:aws:iam::123456789:role/SellingPartnerAPIRole
+# SP_API_MARKETPLACE_ID=A2Q3Y263D00KWC
+
+# Mercado Livre (adicione apenas se for usar dados reais)
+# ML_CLIENT_ID=seu_client_id
+# ML_CLIENT_SECRET=seu_client_secret
+# ML_REFRESH_TOKEN=seu_refresh_token
+# ML_ACCESS_TOKEN=seu_access_token
+# ML_SELLER_ID=seu_seller_id
+
+IMPORTANTE:
+1. Por enquanto, mantenha USE_MOCK_DATA=true para evitar erros
+2. Quando tiver todas as credenciais das APIs, mude para USE_MOCK_DATA=false
+3. As credenciais AWS são obrigatórias para usar a API da Amazon
+4. O sistema funcionará com dados de exemplo enquanto USE_MOCK_DATA=true

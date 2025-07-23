@@ -144,4 +144,4 @@ class AmazonService {
   }
 }
 
-module.exports = new AmazonService();
+module.exports = AmazonService;

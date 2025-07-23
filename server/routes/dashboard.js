@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const AmazonService = require('../services/amazonService');
-const MercadoLivreService = require('../services/mercadolivreService');
+
+// Só importar serviços se não estiver usando dados mockados
+let AmazonService, MercadoLivreService;
+if (process.env.USE_MOCK_DATA !== 'true') {
+  try {
+    AmazonService = require('../services/amazonService');
+    MercadoLivreService = require('../services/mercadolivreService');
+  } catch (error) {
+    console.error('Erro ao carregar serviços das APIs:', error.message);
+  }
+}
 
 router.get('/metrics', async (req, res) => {
   try {
