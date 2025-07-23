@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste OAuth Amazon - AppProft</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 40px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #FF8C00;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #e67e00;
+        }
+        .url-display {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; font-size: 20px; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de OAuth Amazon - AppProft</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Instruções:</strong><br>
+            1. Entre com seu Client ID da Amazon<br>
+            2. Escolha o marketplace (país)<br>
+            3. Teste diferentes URLs de autorização<br>
+            4. Verifique os logs do console (F12)
+        </div>
+
+        <h2>Configuração:</h2>
+        
+        <label>Client ID (Application ID):</label>
+        <input type="text" id="clientId" placeholder="amzn1.application-oa2-client..." 
+               value="amzn1.application-oa2-client.ed333d81a7d34ff1b84982ff1962acb9">
+        
+        <label>Marketplace:</label>
+        <select id="marketplace" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+            <option value="US" selected>Estados Unidos (amazon.com)</option>
+            <option value="BR">Brasil (amazon.com.br)</option>
+            <option value="CA">Canadá (amazon.ca)</option>
+            <option value="MX">México (amazon.com.mx)</option>
+            <option value="UK">Reino Unido (amazon.co.uk)</option>
+            <option value="DE">Alemanha (amazon.de)</option>
+            <option value="FR">França (amazon.fr)</option>
+            <option value="IT">Itália (amazon.it)</option>
+            <option value="ES">Espanha (amazon.es)</option>
+            <option value="JP">Japão (amazon.co.jp)</option>
+            <option value="AU">Austrália (amazon.com.au)</option>
+            <option value="SG">Singapura (amazon.sg)</option>
+        </select>
+
+        <h2>Testar URLs de Autorização:</h2>
+        
+        <div class="grid">
+            <button onclick="testUrl('standard')">1. URL Padrão (com redirect)</button>
+            <button onclick="testUrl('beta')">2. URL Beta (sem redirect)</button>
+            <button onclick="testUrl('direct')">3. URL Direta OAuth</button>
+            <button onclick="testUrl('minimal')">4. URL Mínima</button>
+        </div>
+
+        <div id="urlDisplay" class="url-display" style="display: none;"></div>
+        <div id="errorDisplay" class="error" style="display: none;"></div>
+
+        <h2>URLs que serão testadas:</h2>
+        <pre id="urlList" style="background: #f0f0f0; padding: 15px; border-radius: 5px; font-size: 12px;"></pre>
+
+        <h2>Configuração no Amazon Developer Console:</h2>
+        <div class="info">
+            <strong>Allowed Return URLs que devem estar configuradas:</strong><br>
+            • https://appproft.com/auth/callback<br>
+            • https://appproft.com/api/credentials/amazon/callback<br>
+            • https://appproft.com/<br>
+            <br>
+            <strong>Para adicionar:</strong><br>
+            1. Acesse <a href="https://developer.amazon.com" target="_blank">Amazon Developer Console</a><br>
+            2. Vá para "Apps & Services" → "Login with Amazon"<br>
+            3. Clique em "Web Settings"<br>
+            4. Adicione as URLs acima em "Allowed Return URLs"
+        </div>
+    </div>
+
+    <script>
+        const marketplaceUrls = {
+            'BR': 'https://sellercentral.amazon.com.br',
+            'US': 'https://sellercentral.amazon.com',
+            'CA': 'https://sellercentral.amazon.ca',
+            'MX': 'https://sellercentral.amazon.com.mx',
+            'UK': 'https://sellercentral.amazon.co.uk',
+            'DE': 'https://sellercentral.amazon.de',
+            'FR': 'https://sellercentral.amazon.fr',
+            'IT': 'https://sellercentral.amazon.it',
+            'ES': 'https://sellercentral.amazon.es',
+            'JP': 'https://sellercentral.amazon.co.jp',
+            'AU': 'https://sellercentral.amazon.com.au',
+            'SG': 'https://sellercentral.amazon.sg'
+        };
+
+        function updateUrlList() {
+            const clientId = document.getElementById('clientId').value;
+            const marketplace = document.getElementById('marketplace').value;
+            const baseUrl = marketplaceUrls[marketplace];
+            const state = `appproft_${Date.now()}_${marketplace}`;
+            
+            const urls = {
+                standard: `${baseUrl}/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${encodeURIComponent('https://appproft.com/auth/callback')}&response_type=code`,
+                beta: `${baseUrl}/apps/authorize/consent?application_id=${clientId}&state=${state}&version=beta`,
+                direct: `https://www.amazon.com/ap/oa?client_id=${clientId}&scope=profile&response_type=code&state=${state}&redirect_uri=${encodeURIComponent('https://appproft.com/auth/callback')}`,
+                minimal: `${baseUrl}/apps/authorize/consent?application_id=${clientId}`
+            };
+            
+            document.getElementById('urlList').textContent = JSON.stringify(urls, null, 2);
+            return urls;
+        }
+
+        function testUrl(type) {
+            const urls = updateUrlList();
+            const url = urls[type];
+            
+            console.log(`Testando URL ${type}:`, url);
+            document.getElementById('urlDisplay').style.display = 'block';
+            document.getElementById('urlDisplay').textContent = url;
+            
+            // Abrir em nova aba
+            window.open(url, '_blank');
+            
+            // Log para debug
+            console.log('=== TESTE OAUTH AMAZON ===');
+            console.log('Tipo:', type);
+            console.log('URL:', url);
+            console.log('Client ID:', document.getElementById('clientId').value);
+            console.log('Marketplace:', document.getElementById('marketplace').value);
+        }
+
+        // Atualizar lista de URLs quando mudar configuração
+        document.getElementById('clientId').addEventListener('input', updateUrlList);
+        document.getElementById('marketplace').addEventListener('change', updateUrlList);
+        
+        // Mostrar URLs iniciais
+        updateUrlList();
+
+        // Verificar se voltou com erro
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            document.getElementById('errorDisplay').style.display = 'block';
+            document.getElementById('errorDisplay').innerHTML = `
+                <strong>❌ Erro recebido da Amazon:</strong><br>
+                Error: ${urlParams.get('error')}<br>
+                Description: ${urlParams.get('error_description') || 'Sem descrição'}
+            `;
+        }
+    </script>
+</body>
+</html>

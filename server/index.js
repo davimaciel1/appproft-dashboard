@@ -71,6 +71,7 @@ app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/das
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync'));
 app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
 app.use('/auth', require('./routes/auth-callback'));
+app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
 
 const notificationService = require('./services/notificationService');
