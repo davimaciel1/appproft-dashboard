@@ -314,64 +314,9 @@ class SyncService {
   }
 
   async syncProductImages(tenantId) {
-    // This method updates product images that are missing
-    const client = await pool.connect();
-    
-    try {
-      // Get products without images
-      const productsWithoutImages = await client.query(
-        `SELECT id, marketplace, asin, sku FROM products 
-         WHERE tenant_id = $1 AND image_url IS NULL 
-         LIMIT 50`,
-        [tenantId]
-      );
-      
-      for (const product of productsWithoutImages.rows) {
-        if (product.marketplace === 'amazon' && product.asin) {
-          // Get Amazon credentials
-          const credsResult = await client.query(
-            'SELECT * FROM marketplace_credentials WHERE user_id = $1 AND marketplace = $2',
-            [tenantId, 'amazon']
-          );
-          
-          if (credsResult.rows.length > 0) {
-            const credentials = {
-              clientId: credsResult.rows[0].client_id,
-              clientSecret: credsResult.rows[0].client_secret,
-              refreshToken: credsResult.rows[0].refresh_token,
-              sellerId: credsResult.rows[0].seller_id,
-              marketplaceId: credsResult.rows[0].marketplace_id
-            };
-            
-            const amazonService = new AmazonService(credentials);
-            
-            try {
-              // Rate limited catalog request
-              const catalogData = await this.rateLimitedRequest(async () => {
-                const path = `/catalog/2022-04-01/items/${product.asin}?marketplaceIds=${credentials.marketplaceId}&includedData=images`;
-                return await amazonService.callSPAPI(path);
-              }, 'amazon', 'catalog');
-              
-              if (catalogData.payload?.images?.[0]?.images?.[0]?.link) {
-                await client.query(
-                  'UPDATE products SET image_url = $1 WHERE id = $2',
-                  [catalogData.payload.images[0].images[0].link, product.id]
-                );
-              }
-            } catch (e) {
-              // Continue with next product
-            }
-          }
-        }
-      }
-      
-      secureLogger.info('Product images sync completed', { tenantId });
-      
-    } catch (error) {
-      secureLogger.error('Product images sync failed', { tenantId, error: error.message });
-    } finally {
-      client.release();
-    }
+    // Use the dedicated product image sync service
+    const productImageSync = require('./syncProductImages');
+    return await productImageSync.syncAllProductImages(tenantId);
   }
 }
 

@@ -95,29 +95,44 @@ router.get('/products', async (req, res) => {
         params.push(country);
       }
       
-      // Query simplificada sem materialized view
+      // Query agrupada por produto com vendas totais
       const query = `
+        WITH product_sales AS (
+          SELECT 
+            p.id,
+            p.marketplace,
+            p.country_code,
+            p.asin,
+            p.sku,
+            p.name,
+            p.image_url,
+            COUNT(DISTINCT o.id) as total_orders,
+            COALESCE(SUM(oi.quantity), 0) as total_units_sold,
+            COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
+            COALESCE(SUM((oi.price - COALESCE(oi.cost, 0)) * oi.quantity), 0) as total_profit,
+            -- Variação de unidades (comparando com período anterior)
+            COALESCE(SUM(CASE WHEN o.order_date >= CURRENT_DATE THEN oi.quantity ELSE 0 END), 0) as today_units,
+            COALESCE(SUM(CASE WHEN o.order_date >= CURRENT_DATE - INTERVAL '1 day' 
+                          AND o.order_date < CURRENT_DATE THEN oi.quantity ELSE 0 END), 0) as yesterday_units
+          FROM products p
+          LEFT JOIN order_items oi ON p.id = oi.product_id
+          LEFT JOIN orders o ON oi.order_id = o.id AND o.status NOT IN ('cancelled', 'returned')
+          WHERE ${whereClauses.join(' AND ')}
+          GROUP BY p.id, p.marketplace, p.country_code, p.asin, p.sku, p.name, p.image_url
+        )
         SELECT 
-          p.id,
-          p.marketplace,
-          p.country_code,
-          p.asin,
-          p.sku,
-          p.name,
-          p.image_url,
-          0 as total_orders,
-          0 as total_units_sold,
-          0 as total_revenue,
-          0 as total_profit,
-          0 as roi,
-          1 as sales_rank,
-          0 as inventory,
-          10 as alert_level,
-          0 as today_units,
-          0 as profit_margin
-        FROM products p
-        WHERE ${whereClauses.join(' AND ')}
-        ORDER BY p.name
+          *,
+          CASE 
+            WHEN total_revenue > 0 THEN ((total_profit / total_revenue) * 100)
+            ELSE 0 
+          END as profit_margin,
+          CASE 
+            WHEN total_revenue - total_profit > 0 THEN ((total_profit / (total_revenue - total_profit)) * 100)
+            ELSE 0 
+          END as roi,
+          today_units - yesterday_units as units_variation
+        FROM product_sales
+        ORDER BY total_units_sold DESC
         LIMIT 100
       `;
       
@@ -126,17 +141,17 @@ router.get('/products', async (req, res) => {
       // Format products for frontend
       const products = result.rows.map((product, index) => ({
         id: `${product.marketplace}_${product.id}`,
-        imageUrl: product.image_url || '/placeholder.png',
+        imageUrl: product.image_url || '/placeholder-product.png',
         marketplace: product.marketplace,
         country: product.country_code || 'US',
         name: product.name || 'Produto sem nome',
         sku: product.sku || product.asin || '',
-        units: product.total_units_sold || 0,
-        unitsVariation: Math.floor(Math.random() * 20), // TODO: calcular variação real
+        units: parseInt(product.total_units_sold) || 0,
+        unitsVariation: parseInt(product.units_variation) || 0,
         revenue: parseFloat(product.total_revenue) || 0,
         profit: parseFloat(product.total_profit) || 0,
         roi: parseFloat(product.roi) || 0,
-        margin: parseFloat(product.profit_margin) || 30,
+        margin: parseFloat(product.profit_margin) || 0,
         acos: product.marketplace === 'amazon' ? 16.7 : 20,
         breakEven: product.marketplace === 'amazon' ? 25 : 30
       }));

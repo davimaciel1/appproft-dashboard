@@ -39,7 +39,7 @@ const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
         <select
           value={marketplace}
           onChange={(e) => setMarketplace(e.target.value)}
-          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
         >
           <option value="all">All Markets</option>
           <option value="amazon">Amazon</option>
@@ -50,7 +50,7 @@ const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
         <select
           value={orderStatus}
           onChange={(e) => setOrderStatus(e.target.value)}
-          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
         >
           <option value="all">All Orders</option>
           <option value="pending">Pending</option>
@@ -63,7 +63,7 @@ const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
         <select
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
-          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+          className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
         >
           <option value="all">All Brands & Seller IDs</option>
           {/* Brands serão populados dinamicamente */}
@@ -76,7 +76,7 @@ const FiltersBar: React.FC<FiltersBarProps> = ({ onFiltersChange }) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Enter ASIN, SKU, Order or Keyword"
-            className="w-full px-3 py-2 pl-3 pr-10 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 pl-3 pr-10 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

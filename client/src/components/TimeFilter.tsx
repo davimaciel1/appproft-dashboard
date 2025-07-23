@@ -31,7 +31,7 @@ const TimeFilter: React.FC<TimeFilterProps> = ({ value, onChange }) => {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-[150px] px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+      className="w-[150px] px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
     >
       {timeOptions.map(option => (
         <option key={option.value} value={option.value}>

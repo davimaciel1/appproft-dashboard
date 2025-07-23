@@ -38,7 +38,7 @@ const TotalsRow: React.FC<TotalsRowProps> = ({ data }) => {
       <div className="w-[120px] text-center">
         <span className="font-medium">{data.units.toLocaleString()}</span>
         {data.unitsVariation > 0 && (
-          <span className="text-green-400 text-sm ml-1">+{data.unitsVariation}</span>
+          <span className="text-orange-400 text-sm ml-1">+{data.unitsVariation}</span>
         )}
       </div>
 

@@ -1,166 +1,181 @@
-Preciso que você recrie COMPLETAMENTE o dashboard baseado nesta descrição detalhada:
+Aqui estão as instruções para o Claude Code resolver os problemas:
 
-## LAYOUT GERAL
+INSTRUÇÕES PARA CORRIGIR O DASHBOARD - PROBLEMAS CRÍTICOS:
+O dashboard está com 3 problemas principais que precisam ser corrigidos URGENTEMENTE:
 
-### HEADER DO DASHBOARD
-- Fundo: Verde escuro (#16A34A ou similar)
-- Altura: ~60px
-- Título "Sales" em branco no canto esquerdo
-- Botão "Get a discount!" no canto direito com bandeira dos EUA
+## 1. IMAGENS DOS PRODUTOS NÃO APARECEM
 
-### BARRA DE FILTROS (abaixo do header verde)
-- Fundo: Branco
-- Padding: 16px
-- 5 elementos em linha:
+PROBLEMA: Está mostrando apenas um ícone "A" laranja ao invés da imagem real do produto
 
-1. DROPDOWN "Today" (filtro de período)
-   - Largura: ~150px
-   - Opções (TODAS OBRIGATÓRIAS):
-     * Today
-     * Yesterday
-     * Day Before Yesterday
-     * This Week
-     * Last Week
-     * Last 7 Days
-     * Last 14 Days
-     * This Month
-     * Last Month
-     * Month Before Last
-     * Last 30 Days
-     * Last 3 Months
-     * Last 6 Months
-     * Last 12 Months
-     * Year to Date
-     * Last Year
-     * All Time
-     * Custom
+SOLUÇÃO:
+1. Verificar se a coluna image_url existe na tabela products
+2. Adicionar query para buscar imagens:
+   ```sql
+   SELECT 
+     p.id,
+     p.name,
+     p.sku,
+     p.asin,
+     p.image_url,
+     p.thumbnail_url,
+     COALESCE(p.image_url, p.thumbnail_url, '/placeholder-product.png') as product_image
+   FROM products p
 
-2. DROPDOWN "All Markets"
-   - Opções: All Markets, Amazon, Mercado Livre
+No componente ProductRow.jsx:
+jsx<div className="product-image-container">
+  <img 
+    src={product.product_image || '/placeholder-product.png'}
+    alt={product.name}
+    className="w-[60px] h-[60px] object-cover rounded-lg"
+    onError={(e) => {
+      e.target.src = '/placeholder-product.png';
+    }}
+  />
+  {/* Logo do marketplace */}
+  <img 
+    src={`/icons/${product.marketplace}-logo.svg`}
+    className="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full p-0.5"
+  />
+</div>
 
-3. DROPDOWN "All Orders"
-   - Opções: All Orders, Pending, Shipped, Delivered, Cancelled
+Se não houver imagens no banco, implementar sync com APIs:
 
-4. DROPDOWN "All Brands & Seller IDs"
-   - Listar brands/sellers disponíveis
-
-5. CAMPO DE BUSCA
-   - Placeholder: "Enter ASIN, SKU, Order or Keyword"
-   - Ícone de lupa à direita
-   - Borda cinza clara
-
-### LINHA DE TOTAIS (topo da tabela)
-- Fundo: Cinza escuro (#374151)
-- Texto: Branco
-- Altura: ~50px
-- Colunas alinhadas com a tabela principal:
-  * "Totals" (esquerda)
-  * Units: Número + "+X" em verde pequeno
-  * Revenue: Valor em dólar azul
-  * Profit: Valor em dólar verde
-  * ROI: "0%" com "Margin: XX%" abaixo em cinza
-  * ACOS: "0%" com "B/E: XX%" abaixo em cinza
-
-### TABELA DE PRODUTOS
-
-#### ESTRUTURA DAS COLUNAS:
-1. **Coluna PRODUTO** (350px largura)
-   - Thumbnail 60x60px com bordas arredondadas
-   - Logo do marketplace (Amazon/ML) no canto inferior direito do thumbnail (20x20px)
-   - Bandeira do país no canto superior esquerdo (16x16px circular)
-   - À direita da imagem:
-     * Nome do produto (fonte média, cor preta)
-     * SKU/ASIN abaixo (fonte pequena, cor cinza)
-   - Ícones de ações no final (gráfico, link, configurações)
-
-2. **Coluna UNITS** (120px, centralizada)
-   - Número principal grande
-   - "+X" em verde pequeno ao lado
-   - Ícone de refresh abaixo
-
-3. **Coluna REVENUE** (150px, alinhada à direita)
-   - Valor em dólar ($XXX) em azul (#3B82F6)
-   - Ícone de coração verde abaixo
-
-4. **Coluna PROFIT** (150px, alinhada à direita)
-   - Valor em dólar
-   - Verde (#10B981) se positivo com ▲
-   - Vermelho (#EF4444) se negativo com ▼
-   - Ícone de lixeira abaixo
-
-5. **Coluna ROI** (120px, centralizada)
-   - "0%" como texto principal
-   - "Margin: XX%" abaixo em cinza pequeno
-   - Sem ícones
-
-6. **Coluna ACOS** (120px, centralizada)
-   - "0%" como texto principal
-   - "B/E: XX%" abaixo em cinza pequeno
-   - Ícone de busca no final
-
-#### ESTILO DA TABELA:
-- Linhas alternadas: branco e cinza muito claro (#F9FAFB)
-- Hover: fundo cinza claro (#F3F4F6)
-- Padding vertical: 12px por linha
-- Bordas: linha fina cinza clara entre linhas
-- Sem bordas verticais
-
-### CORES EXATAS:
-- Verde header: #16A34A
-- Cinza escuro (totals): #374151
-- Azul revenue: #3B82F6
-- Verde profit: #10B981
-- Vermelho loss: #EF4444
-- Cinza texto secundário: #6B7280
-- Fundo alternado: #F9FAFB
-
-### COMPORTAMENTOS:
-1. Produtos ordenados por TOTAL DE VENDAS (maior primeiro)
-2. Filtros atualizam dados em tempo real
-3. Hover mostra tooltip com mais informações
-4. Clique no produto abre detalhes
-5. Paginação no rodapé (20 produtos por página)
-
-### DADOS OBRIGATÓRIOS DE CADA PRODUTO:
-- image_url (com fallback para placeholder)
-- marketplace_logo 
-- country_flag
-- product_name
-- sku/asin
-- units_sold
-- units_variation (+X)
-- revenue (formatado em dólar)
-- profit (formatado em dólar com cor)
-- roi_percentage
-- profit_margin
-- acos
-- break_even
-
-IMPORTANTE: 
-- NÃO incluir coluna de ranking
-- Todos os valores devem vir do PostgreSQL
-- Implementar loading skeleton enquanto carrega
-- Performance com virtual scrolling para muitos produtos
+Amazon: usar o endpoint getCatalogItem com includedData=['images']
+ML: usar o endpoint /items/{id} que retorna pictures array
 
 
-COMPONENTES A CRIAR/MODIFICAR:
 
-1. Dashboard.jsx - estrutura principal
-2. FiltersBar.jsx - barra com todos os dropdowns
-3. TotalsRow.jsx - linha de totais no topo
-4. ProductsTable.jsx - tabela principal
-5. ProductRow.jsx - linha individual de produto
-6. TimeFilter.jsx - dropdown com TODAS as opções de tempo
+2. MUDAR COR DE VERDE PARA LARANJA
+PROBLEMA: O header está verde (#16A34A) mas deveria ser laranja AppProft (#FF8C00)
+SOLUÇÃO:
 
-QUERIES SQL NECESSÁRIAS:
-- Buscar produtos com todas as métricas agregadas
-- Ordenar por total_units_sold DESC
-- Incluir JOINs com inventory, orders, advertising_metrics
-- Calcular profit margin e break-even
+Localizar todos os lugares com cor verde e substituir:
 
-FORMATAÇÕES:
-- Moeda: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-- Porcentagem: valor.toFixed(1) + '%'
-- Números: valor.toLocaleString()
+Header background: de bg-green-600 para bg-orange-500 ou style={{backgroundColor: '#FF8C00'}}
+Botões: de bg-green-500 para bg-orange-500
+Texto "Get a discount!": manter branco mas fundo laranja
 
-O resultado DEVE ser visualmente IDÊNTICO ao descrito acima.
+
+Criar variáveis CSS no global.css:
+css:root {
+  --primary-orange: #FF8C00;
+  --primary-dark: #1a1f36;
+  --success-green: #28a745;
+}
+
+Usar as variáveis:
+jsx<div style={{ backgroundColor: 'var(--primary-orange)' }}>
+  Sales
+</div>
+
+
+3. AGRUPAR VENDAS POR PRODUTO
+PROBLEMA: Os produtos estão aparecendo individualmente ao invés de agrupados com soma total de vendas
+SOLUÇÃO:
+
+Criar query SQL que agrupa por produto:
+sqlWITH product_sales AS (
+  SELECT 
+    p.id,
+    p.name,
+    p.sku,
+    p.asin,
+    p.image_url,
+    p.marketplace,
+    SUM(oi.quantity) as total_units,
+    COUNT(DISTINCT o.id) as total_orders,
+    SUM(oi.price * oi.quantity) as total_revenue,
+    SUM((oi.price - COALESCE(oi.cost, 0)) * oi.quantity) as total_profit,
+    -- Vendas do período selecionado
+    SUM(CASE WHEN o.created_at >= $2 THEN oi.quantity ELSE 0 END) as period_units,
+    -- ACOS médio
+    AVG(am.acos) as avg_acos
+  FROM products p
+  LEFT JOIN order_items oi ON p.id = oi.product_id
+  LEFT JOIN orders o ON oi.order_id = o.id
+  LEFT JOIN advertising_metrics am ON p.id = am.product_id
+  WHERE p.tenant_id = $1
+    AND o.status NOT IN ('cancelled', 'returned')
+  GROUP BY p.id, p.name, p.sku, p.asin, p.image_url, p.marketplace
+  ORDER BY total_units DESC
+)
+SELECT * FROM product_sales;
+
+Na API endpoint:
+javascript// api/products.js
+app.get('/api/products/sales', async (req, res) => {
+  const { timeFilter } = req.query;
+  const startDate = getStartDateFromFilter(timeFilter);
+  
+  const products = await db.query(productSalesQuery, [
+    req.user.tenantId,
+    startDate
+  ]);
+  
+  res.json(products.rows);
+});
+
+No frontend, garantir que está usando o endpoint correto:
+javascriptconst fetchProducts = async () => {
+  const response = await fetch(`/api/products/sales?timeFilter=${selectedTime}`);
+  const data = await response.json();
+  setProducts(data);
+};
+
+
+CHECKLIST DE CORREÇÕES:
+
+ Adicionar coluna image_url na tabela products se não existir
+ Implementar sync de imagens das APIs
+ Substituir TODAS as cores verdes por laranja #FF8C00
+ Criar query SQL que agrupa vendas por produto
+ Mostrar total acumulado de vendas (não individual)
+ Adicionar fallback para imagens quebradas
+ Testar com dados reais do banco
+
+RESULTADO ESPERADO:
+
+Produtos com imagens reais (60x60px) ao invés do ícone "A"
+Header e elementos principais em laranja AppProft (#FF8C00)
+Vendas agrupadas mostrando total por produto, não vendas individuais
+
+IMPORTANTE: Fazer essas correções ANTES de qualquer outra melhoria no dashboard.
+
+---
+
+**CÓDIGO DE EXEMPLO PARA SYNC DE IMAGENS:**
+
+```javascript
+// syncProductImages.js
+async function syncAmazonProductImages(tenantId) {
+  const productsWithoutImages = await db.query(
+    'SELECT * FROM products WHERE tenant_id = $1 AND (image_url IS NULL OR image_url = \'\')',
+    [tenantId]
+  );
+
+  for (const product of productsWithoutImages.rows) {
+    try {
+      const catalogItem = await amazonClient.callAPI({
+        operation: 'getCatalogItem',
+        path: { asin: product.asin },
+        query: {
+          marketplaceIds: ['A2Q3Y263D00KWC'],
+          includedData: ['images', 'attributes']
+        }
+      });
+
+      const mainImage = catalogItem.images?.[0]?.images?.find(
+        img => img.variant === 'MAIN'
+      )?.link;
+
+      if (mainImage) {
+        await db.query(
+          'UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2',
+          [mainImage, product.id]
+        );
+      }
+    } catch (error) {
+      console.error(`Erro ao buscar imagem do produto ${product.asin}:`, error);
+    }
+  }
+}

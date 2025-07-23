@@ -64,9 +64,9 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-green-600 h-[60px] flex items-center justify-between px-6">
+      <div className="h-[60px] flex items-center justify-between px-6" style={{ backgroundColor: '#FF8C00' }}>
         <h1 className="text-white text-2xl font-semibold">Sales</h1>
-        <button className="bg-white text-green-600 px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors">
+        <button className="bg-white px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors" style={{ color: '#FF8C00' }}>
           <span>🇺🇸</span>
           Get a discount!
         </button>
