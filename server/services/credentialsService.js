@@ -237,7 +237,4 @@ class CredentialsService {
   }
 }
 
-// Singleton
-const credentialsService = new CredentialsService();
-
-module.exports = credentialsService;
+module.exports = CredentialsService;
