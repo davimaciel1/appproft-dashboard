@@ -64,12 +64,7 @@ const Dashboard: React.FC = () => {
       
       // Se não houver produtos e não está sincronizando, mostrar opção manual
       if (response.data.products.length === 0) {
-        toast.error('Nenhum produto encontrado. Clique para sincronizar manualmente.', {
-          action: {
-            label: 'Sincronizar',
-            onClick: () => triggerManualSync()
-          }
-        });
+        toast.error('Nenhum produto encontrado. Use o botão "Sincronizar Agora" para sincronizar manualmente.');
       }
       
     } catch (error) {
