@@ -23,15 +23,17 @@ interface ProductRowProps {
 }
 
 const ProductRow: React.FC<ProductRowProps> = ({ product, isEven }) => {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (value: number | null | undefined) => {
+    const numValue = parseFloat(String(value)) || 0;
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'USD'
-    }).format(value);
+      currency: 'BRL'
+    }).format(numValue);
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
+  const formatPercentage = (value: number | null | undefined) => {
+    const numValue = parseFloat(String(value)) || 0;
+    return `${numValue.toFixed(1)}%`;
   };
 
   const getMarketplaceLogo = (marketplace: string) => {

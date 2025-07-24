@@ -47,10 +47,21 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
 
   // Converter produtos para o formato esperado pelo ProductRow
   const formattedProducts = products.map(product => ({
-    ...product,
-    imageUrl: product.imageUrl || '/placeholder-product.svg',
+    id: product.id || `${product.marketplace}_${Date.now()}`,
+    name: product.name || 'Produto sem nome',
+    sku: product.sku || (product as any).asin || 'SKU não disponível',
+    imageUrl: product.imageUrl || (product as any).image || '/placeholder-product.svg',
     marketplaceLogo: product.marketplace as 'amazon' | 'mercadolivre',
-    countryFlag: product.country
+    countryFlag: product.country || 'BR',
+    units: parseInt(String(product.units || 0)),
+    unitsVariation: parseInt(String(product.unitsVariation || 0)),
+    revenue: parseFloat(String(product.revenue || 0)),
+    profit: parseFloat(String(product.profit || 0)),
+    roi: parseFloat(String(product.roi || 0)),
+    margin: parseFloat(String(product.margin || 0)),
+    acos: parseFloat(String(product.acos || 0)),
+    breakEven: parseFloat(String(product.breakEven || 0)),
+    inventory: parseInt(String((product as any).inventory || 0))
   }));
 
   return (
