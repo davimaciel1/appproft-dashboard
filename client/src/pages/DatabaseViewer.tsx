@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import SQLFilters from '../components/SQLFilters';
+import QueryResults from '../components/QueryResults';
 
 interface Table {
   table_name: string;
@@ -46,6 +48,12 @@ const DatabaseViewer: React.FC = () => {
     columns: []
   });
   const [allColumns, setAllColumns] = useState<{[table: string]: Column[]}>({});
+  
+  // Estados para o sistema de filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterResults, setFilterResults] = useState<any[]>([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterError, setFilterError] = useState<string>('');
 
   useEffect(() => {
     loadTables();
@@ -103,6 +111,30 @@ const DatabaseViewer: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para executar queries dos filtros
+  const executeFilterQuery = async (query: string) => {
+    if (!query.trim()) return;
+    
+    try {
+      setFilterLoading(true);
+      setFilterError('');
+      const response = await api.post('/api/database/query', { query });
+      setFilterResults(response.data.rows);
+      setQueryResult(null);
+      setTableData(null);
+    } catch (error: any) {
+      setFilterError(error.response?.data?.error || error.message);
+      setFilterResults([]);
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  // Função para atualizar a query dos filtros
+  const handleFilterQueryGenerated = (query: string) => {
+    setCustomQuery(query);
   };
 
   const formatValue = (value: any, columnName?: string): React.ReactNode => {
@@ -220,13 +252,26 @@ LIMIT 100`;
               </h1>
               <p className="text-gray-600 mt-1">Explore e visualize os dados do PostgreSQL</p>
             </div>
-            <button
-              onClick={() => setShowCreateView(!showCreateView)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-            >
-              <span>➕</span>
-              Criar View Customizada
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                  showFilters 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                <span>🔽</span>
+                {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              </button>
+              <button
+                onClick={() => setShowCreateView(!showCreateView)}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+              >
+                <span>➕</span>
+                Criar View Customizada
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -275,6 +320,23 @@ LIMIT 100`;
 
         {/* Área principal */}
         <div className="flex-1 p-6 overflow-auto">
+          {/* Filtros SQL Inteligentes */}
+          {showFilters && (
+            <SQLFilters 
+              onQueryGenerated={handleFilterQueryGenerated}
+              onExecuteQuery={executeFilterQuery}
+            />
+          )}
+
+          {/* Resultados dos Filtros */}
+          {showFilters && (filterResults.length > 0 || filterLoading || filterError) && (
+            <QueryResults 
+              results={filterResults}
+              loading={filterLoading}
+              error={filterError}
+            />
+          )}
+
           {/* Create View Modal */}
           {showCreateView && (
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200">
@@ -397,7 +459,7 @@ LIMIT 100`;
           ) : (
             <>
               {/* Resultado de query customizada */}
-              {queryResult && (
+              {queryResult && !showFilters && (
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                   <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
                     <h3 className="font-bold text-lg text-gray-800">📊 Resultado da Query</h3>
@@ -431,7 +493,7 @@ LIMIT 100`;
               )}
 
               {/* Dados da tabela selecionada */}
-              {tableData && !queryResult && (
+              {tableData && !queryResult && !showFilters && (
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                   <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
                     <h3 className="font-bold text-xl text-gray-800">📋 {tableData.tableName}</h3>
