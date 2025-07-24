@@ -69,6 +69,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const authMiddleware = require('./middleware/auth');
+const autoAuthMiddleware = require('./middleware/autoAuth');
 const { tenantIsolation } = require('./middleware/tenantIsolation');
 
 app.use('/api/health', require('./routes/health'));
@@ -77,7 +78,7 @@ app.use('/api/token-auth', require('./routes/token-auth'));
 app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
 app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
 app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
-app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard-fallback'));
+app.use('/api/dashboard', autoAuthMiddleware, tenantIsolation, require('./routes/dashboard-fallback'));
 app.use('/api/dashboard-local', authMiddleware, require('./routes/dashboardLocal'));
 app.use('/api/products', authMiddleware, tenantIsolation, require('./routes/products/summary'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync/trigger'));
@@ -86,7 +87,6 @@ app.use('/auth', require('./routes/auth-callback'));
 app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
 app.use('/api/public', require('./routes/public-metrics')); // Rota pública temporária
-app.use('/api/public', require('./routes/public-aggregated-metrics')); // Métricas agregadas SEM autenticação
 app.use('/api/public-db', require('./routes/database-viewer')); // Database viewer público temporário
 app.use('/db-viewer', require('./routes/database-viewer-public')); // Página HTML do banco
 app.use('/api/data-kiosk', authMiddleware, require('./routes/dataKiosk')); // Data Kiosk routes

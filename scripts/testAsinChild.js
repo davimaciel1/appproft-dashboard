@@ -46,12 +46,12 @@ async function testAsinChild() {
       endDate: '2024-12-31'
     };
 
-    // Fazer a requisição
+    // Fazer a requisição (SEM TOKEN - sistema usa automaticamente usuário do banco)
     const response = await axios.get(`${API_BASE_URL}/aggregated-metrics`, {
       params,
       headers: {
-        'Content-Type': 'application/json',
-        'X-User-ID': '1' // Simular usuário logado
+        'Content-Type': 'application/json'
+        // Sem Authorization header - middleware autoAuth usa usuário padrão do banco
       }
     });
 

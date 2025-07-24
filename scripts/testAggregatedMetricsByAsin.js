@@ -46,12 +46,12 @@ async function testAggregatedMetricsByAsin() {
       endDate: '2024-12-31'           // Data final (ajuste conforme necessário)
     };
 
-    // Fazer a requisição (sem precisar de token - o sistema usa as credenciais do banco)
+    // Fazer a requisição (SEM TOKEN - sistema usa automaticamente usuário do banco)
     const response = await axios.get(`${API_BASE_URL}/aggregated-metrics`, {
       params,
       headers: {
-        'Content-Type': 'application/json',
-        'X-User-ID': '1' // Simular usuário logado
+        'Content-Type': 'application/json'
+        // Sem Authorization header - middleware autoAuth usa usuário padrão do banco
       }
     });
 
