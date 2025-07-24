@@ -4,9 +4,11 @@ import io from 'socket.io-client';
 import toast from 'react-hot-toast';
 import FiltersBar from '../components/FiltersBar';
 import ProductsTable from '../components/ProductsTable';
+import MetricsCards from '../components/MetricsCards';
 
 const Dashboard: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     period: 'today',
@@ -46,24 +48,25 @@ const Dashboard: React.FC = () => {
       if (currentFilters.orderStatus !== 'all') params.append('orderType', currentFilters.orderStatus);
       if (currentFilters.search) params.append('search', currentFilters.search);
       
-      // Usar novo endpoint de products/summary
-      const response = await api.get(`/api/products/summary?${params.toString()}`);
+      // Buscar produtos e métricas dos endpoints corretos
+      const [productsResponse, metricsResponse] = await Promise.all([
+        api.get(`/api/dashboard/products?${params.toString()}`),
+        api.get(`/api/dashboard/metrics?${params.toString()}`)
+      ]);
       
-      if (response.data.message === 'sync_needed') {
-        // Primeira sincronização em andamento
-        toast.loading('Sincronizando dados das APIs... Aguarde alguns minutos.', {
-          duration: 8000
-        });
-        
-        // Tentar novamente em 30 segundos
-        setTimeout(() => fetchDashboardData(currentFilters), 30000);
-        return;
-      }
+      // Verificar a estrutura real da resposta
+      console.log('Resposta da API products:', productsResponse.data);
+      console.log('Resposta da API metrics:', metricsResponse.data);
       
-      setProducts(response.data.products || []);
+      const productsData = Array.isArray(productsResponse.data) 
+        ? productsResponse.data 
+        : (productsResponse.data?.products || productsResponse.data?.data || []);
+      
+      setProducts(productsData);
+      setMetrics(metricsResponse.data || {});
       
       // Se não houver produtos e não está sincronizando, mostrar opção manual
-      if (response.data.products.length === 0) {
+      if (productsData.length === 0) {
         toast.error('Nenhum produto encontrado. Use o botão "Sincronizar Agora" para sincronizar manualmente.');
       }
       
@@ -121,7 +124,29 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-          <ProductsTable products={products} />
+          <>
+            {/* Metrics Cards */}
+            {metrics && <MetricsCards metrics={metrics} />}
+            
+            {/* No products message with sync button */}
+            {products.length === 0 ? (
+              <div className="bg-white rounded-lg p-8 text-center mt-4">
+                <h3 className="text-xl font-semibold mb-4">Nenhum produto encontrado</h3>
+                <p className="text-gray-600 mb-6">
+                  Clique no botão abaixo para sincronizar seus produtos da Amazon e Mercado Livre
+                </p>
+                <button
+                  onClick={triggerManualSync}
+                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <span>🔄</span>
+                  Sincronizar Agora
+                </button>
+              </div>
+            ) : (
+              <ProductsTable products={products} />
+            )}
+          </>
         )}
       </div>
     </div>
