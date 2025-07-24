@@ -15,6 +15,14 @@ interface SQLFiltersProps {
 const FILTROS_CONFIG = {
     periodo: {
       'todos': { label: 'Todos os períodos', sql: '' },
+      'hoje': { 
+        label: 'Hoje', 
+        sql: "AND DATE(o.order_date) = CURRENT_DATE" 
+      },
+      'ontem': { 
+        label: 'Ontem', 
+        sql: "AND DATE(o.order_date) = CURRENT_DATE - INTERVAL '1 day'" 
+      },
       'ultimos_7': { label: 'Últimos 7 dias', sql: "AND o.order_date >= CURRENT_DATE - INTERVAL '7 days'" },
       'ultimos_30': { label: 'Últimos 30 dias', sql: "AND o.order_date >= CURRENT_DATE - INTERVAL '30 days'" },
       'ultimos_90': { label: 'Últimos 90 dias', sql: "AND o.order_date >= CURRENT_DATE - INTERVAL '90 days'" },
@@ -203,6 +211,8 @@ LIMIT 50`;
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
           >
             <option value="todos">Todos os períodos</option>
+            <option value="hoje">Hoje</option>
+            <option value="ontem">Ontem</option>
             <option value="ultimos_7">Últimos 7 dias</option>
             <option value="ultimos_30">Últimos 30 dias</option>
             <option value="ultimos_90">Últimos 90 dias</option>
