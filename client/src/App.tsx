@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import DatabaseViewer from './pages/DatabaseViewer';
+import AggregatedMetrics from './pages/AggregatedMetrics';
 import Header from './components/Header';
 import CredentialsConfig from './components/CredentialsConfig';
 
@@ -59,6 +60,15 @@ function App() {
               <>
                 <Header />
                 <DatabaseViewer />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/aggregated-metrics" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <AggregatedMetrics />
               </>
             ) : <Navigate to="/login" />
           } />

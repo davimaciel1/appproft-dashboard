@@ -250,7 +250,7 @@ LIMIT 100`;
                 <span className="text-4xl">🗄️</span>
                 Database Viewer
               </h1>
-              <p className="text-gray-600 mt-1">Explore e visualize os dados do PostgreSQL</p>
+              <p className="text-gray-600 mt-1">Explore e visualize os dados do PostgreSQL com filtros inteligentes</p>
             </div>
             <div className="flex items-center gap-3">
               <button

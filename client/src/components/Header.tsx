@@ -25,6 +25,12 @@ const Header: React.FC = () => {
             Credenciais
           </button>
           <button 
+            onClick={() => navigate('/aggregated-metrics')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Métricas Agregadas
+          </button>
+          <button 
             onClick={() => navigate('/database')}
             className="text-gray-600 hover:text-gray-800 font-medium"
           >
