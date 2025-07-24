@@ -36,6 +36,7 @@ router.use(checkTablesExist);
 router.get('/metrics', async (req, res) => {
   try {
     const userId = req.userId;
+    const tenantId = req.tenantId || userId; // Para compatibilidade
     
     // Se as tabelas não existirem, retornar dados vazios
     if (!req.tablesExist) {

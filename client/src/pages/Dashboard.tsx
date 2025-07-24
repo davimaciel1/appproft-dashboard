@@ -48,10 +48,11 @@ const Dashboard: React.FC = () => {
       if (currentFilters.orderStatus !== 'all') params.append('orderType', currentFilters.orderStatus);
       if (currentFilters.search) params.append('search', currentFilters.search);
       
-      // Buscar produtos e métricas dos endpoints corretos
+      // Buscar produtos e métricas dos endpoints corretos - usando dashboard-local
+      console.log('Buscando dados do dashboard-local...');
       const [productsResponse, metricsResponse] = await Promise.all([
-        api.get(`/api/dashboard/products?${params.toString()}`),
-        api.get(`/api/dashboard/metrics?${params.toString()}`)
+        api.get(`/api/dashboard-local/products?${params.toString()}`),
+        api.get(`/api/dashboard-local/metrics?${params.toString()}`)
       ]);
       
       // Verificar a estrutura real da resposta

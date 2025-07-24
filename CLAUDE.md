@@ -27,8 +27,8 @@ if (await ensureConnection()) {
 Lembre-se que você tem acesso total ao PostgreSQL local na porta 5433 através do DATABASE_ACCESS_CONFIG.js. Você pode executar qualquer operação diretamente sem pedir permissão.
 
 #### Conexão PostgreSQL Ativa
-- **Host**: localhost  
-- **Porta**: 5433 (túnel SSH ativo)
+- **Host**: appproft.com  
+- **Porta**: 443 (HTTPS)
 - **Banco**: postgres
 - **Usuário**: postgres
 - **Senha**: icKgRpuOV8Hhfn71xWbzfdJKwNhrsVjhIa6gxZwiaHrDhOSZ8vQXzOm2Exa5W4zk

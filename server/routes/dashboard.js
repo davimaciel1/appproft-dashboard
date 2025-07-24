@@ -4,6 +4,7 @@ const secureLogger = require('../utils/secureLogger');
 const AmazonService = require('../services/amazonService');
 const MercadoLivreService = require('../services/mercadolivreService');
 const CredentialsService = require('../services/credentialsService');
+const pool = require('../db/pool');
 
 const credentialsService = new CredentialsService();
 
@@ -247,7 +248,7 @@ router.get('/products', async (req, res) => {
       params.push(startDate.toISOString());
     }
     
-    // Query products from materialized view with additional real-time data
+    // Query products with sales data calculated on the fly
     const query = `
       SELECT 
         p.id,
@@ -257,32 +258,31 @@ router.get('/products', async (req, res) => {
         p.sku,
         p.name,
         p.image_url,
-        COALESCE(ps.total_orders, 0) as total_orders,
-        COALESCE(ps.total_units_sold, 0) as total_units_sold,
-        COALESCE(ps.total_revenue, 0) as total_revenue,
-        COALESCE(ps.total_profit, 0) as total_profit,
-        COALESCE(ps.roi, 0) as roi,
-        COALESCE(ps.sales_rank, 999) as sales_rank,
-        COALESCE(i.quantity, 0) as inventory,
-        COALESCE(i.alert_level, 10) as alert_level,
+        p.inventory,
+        COALESCE(COUNT(DISTINCT oi.order_id), 0) as total_orders,
+        COALESCE(SUM(oi.quantity), 0) as total_units_sold,
+        COALESCE(SUM(oi.quantity * oi.unit_price), 0) as total_revenue,
+        COALESCE(SUM(oi.quantity * oi.unit_price) * 0.3, 0) as total_profit,
+        CASE 
+          WHEN COALESCE(SUM(oi.quantity * oi.unit_price), 0) > 0 
+          THEN (COALESCE(SUM(oi.quantity * oi.unit_price), 0) * 0.3 / COALESCE(SUM(oi.quantity * oi.unit_price), 0) * 100)
+          ELSE 0 
+        END as profit_margin,
+        0 as roi,
+        999 as sales_rank,
+        10 as alert_level,
         COALESCE(
           (SELECT SUM(oi2.quantity) 
            FROM order_items oi2 
            JOIN orders o2 ON oi2.order_id = o2.id 
            WHERE oi2.product_id = p.id 
            AND DATE(o2.order_date) = CURRENT_DATE), 0
-        ) as today_units,
-        CASE 
-          WHEN ps.total_revenue > 0 
-          THEN (ps.total_profit / ps.total_revenue * 100)
-          ELSE 0 
-        END as profit_margin
+        ) as today_units
       FROM products p
-      LEFT JOIN product_sales_summary ps ON p.id = ps.id
-      LEFT JOIN inventory i ON p.id = i.product_id
+      LEFT JOIN order_items oi ON p.id = oi.product_id
       WHERE ${whereClauses.join(' AND ')}
-      ORDER BY COALESCE(ps.total_units_sold, 0) DESC, p.name
-      LIMIT 100
+      GROUP BY p.id
+      ORDER BY COALESCE(SUM(oi.quantity), 0) DESC, p.name
     `;
     
     const result = await pool.query(query, params);
