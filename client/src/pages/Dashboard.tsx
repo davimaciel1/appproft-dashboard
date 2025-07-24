@@ -38,21 +38,62 @@ const Dashboard: React.FC = () => {
 
   const fetchDashboardData = async (currentFilters = filters) => {
     try {
+      setLoading(true);
+      
       const params = new URLSearchParams();
-      if (currentFilters.period) params.append('period', currentFilters.period);
+      if (currentFilters.period) params.append('dateRange', currentFilters.period);
       if (currentFilters.marketplace !== 'all') params.append('marketplace', currentFilters.marketplace);
-      if (currentFilters.orderStatus !== 'all') params.append('orderStatus', currentFilters.orderStatus);
-      if (currentFilters.brand !== 'all') params.append('brand', currentFilters.brand);
+      if (currentFilters.orderStatus !== 'all') params.append('orderType', currentFilters.orderStatus);
       if (currentFilters.search) params.append('search', currentFilters.search);
       
-      const productsRes = await api.get(`/api/dashboard/products?${params.toString()}`);
+      // Usar novo endpoint de products/summary
+      const response = await api.get(`/api/products/summary?${params.toString()}`);
       
-      setProducts(productsRes.data.products);
+      if (response.data.message === 'sync_needed') {
+        // Primeira sincronização em andamento
+        toast.loading('Sincronizando dados das APIs... Aguarde alguns minutos.', {
+          duration: 8000
+        });
+        
+        // Tentar novamente em 30 segundos
+        setTimeout(() => fetchDashboardData(currentFilters), 30000);
+        return;
+      }
+      
+      setProducts(response.data.products || []);
+      
+      // Se não houver produtos e não está sincronizando, mostrar opção manual
+      if (response.data.products.length === 0) {
+        toast.error('Nenhum produto encontrado. Clique para sincronizar manualmente.', {
+          action: {
+            label: 'Sincronizar',
+            onClick: () => triggerManualSync()
+          }
+        });
+      }
+      
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast.error('Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const triggerManualSync = async () => {
+    try {
+      toast.loading('Iniciando sincronização...', { duration: 2000 });
+      
+      await api.post('/api/sync/trigger');
+      
+      toast.success('Sincronização iniciada! Os dados aparecerão em alguns minutos.');
+      
+      // Verificar novamente em 60 segundos
+      setTimeout(() => fetchDashboardData(), 60000);
+      
+    } catch (error) {
+      console.error('Erro ao iniciar sincronização:', error);
+      toast.error('Erro ao iniciar sincronização');
     }
   };
 

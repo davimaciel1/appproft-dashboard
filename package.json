@@ -4,16 +4,20 @@
   "description": "Dashboard consolidado de vendas - Amazon e Mercado Livre",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server\" \"npm run sync:worker\"",
     "server": "nodemon server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "setup": "npm install && cd client && npm install",
+    "setup": "node scripts/setupDashboard.js",
+    "setup:status": "node scripts/setupDashboard.js status",
+    "sync:worker": "node workers/mainSyncWorker.js",
+    "sync:force": "node scripts/forceSyncAll.js",
+    "sync:status": "npm run setup:status",
+    "db:migrate": "node scripts/setupDashboard.js",
     "tunnel": "start start-tunnel.bat",
     "test-db": "node quick-db-report.js",
-    "start-app": "node server/index.js",
-    "migrate": "node server/db/migrate.js",
-    "sync:test": "node server/services/testSync.js"
+    "start": "node server/index.js",
+    "migrate": "node server/db/migrate.js"
   },
   "dependencies": {
     "@sp-api-sdk/auth": "^2.2.10",
