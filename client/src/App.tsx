@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import DatabaseViewer from './pages/DatabaseViewer';
 import Header from './components/Header';
 import CredentialsConfig from './components/CredentialsConfig';
 
@@ -49,6 +50,15 @@ function App() {
               <>
                 <Header />
                 <CredentialsConfig />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/database" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <DatabaseViewer />
               </>
             ) : <Navigate to="/login" />
           } />

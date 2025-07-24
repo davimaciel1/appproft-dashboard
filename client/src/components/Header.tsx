@@ -25,6 +25,12 @@ const Header: React.FC = () => {
             Credenciais
           </button>
           <button 
+            onClick={() => navigate('/database')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Banco de Dados
+          </button>
+          <button 
             onClick={() => {
               localStorage.removeItem('token');
               window.location.href = '/login';

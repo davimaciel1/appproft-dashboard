@@ -53,6 +53,16 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// Middleware de debug - mostrar todas as requisições
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  if (req.originalUrl.includes('/api/dashboard')) {
+    console.log('Headers:', req.headers);
+    console.log('Query:', req.query);
+  }
+  next();
+});
+
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'public')));
@@ -76,6 +86,10 @@ app.use('/auth', require('./routes/auth-callback'));
 app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
 app.use('/api/public', require('./routes/public-metrics')); // Rota pública temporária
+app.use('/api/public-db', require('./routes/database-viewer')); // Database viewer público temporário
+app.use('/db-viewer', require('./routes/database-viewer-public')); // Página HTML do banco
+app.use('/api/data-kiosk', authMiddleware, require('./routes/dataKiosk')); // Data Kiosk routes
+app.use('/api/database', authMiddleware, require('./routes/database-viewer')); // Database viewer
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
@@ -118,16 +132,16 @@ server.listen(PORT, async () => {
   tokenRenewalService.startAutoRenewal();
   secureLogger.info('Sistema de renovação automática de tokens iniciado');
   
-  // Start real-time sync worker (desabilitado temporariamente até ter as tabelas)
-  /*
+  // Start main sync worker para popular banco de dados
   try {
-    const realtimeSyncWorker = require('./workers/realtimeSync');
-    await realtimeSyncWorker.start();
-    secureLogger.info('Worker de sincronização em tempo real iniciado');
+    const mainSyncWorker = require('../workers/mainSyncWorker');
+    await mainSyncWorker.start();
+    secureLogger.info('Worker de sincronização automática iniciado - sincronizando a cada 60 segundos');
+    console.log('✅ Worker de sincronização iniciado - populando banco de dados automaticamente');
   } catch (error) {
     secureLogger.error('Erro ao iniciar worker de sincronização', { error: error.message });
+    console.error('❌ Erro ao iniciar worker:', error.message);
   }
-  */
 });
 
 module.exports = { io };
