@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 console.log('Server started with USE_MOCK_DATA:', process.env.USE_MOCK_DATA);
 
 // Verificar credenciais LWA obrigatórias
@@ -68,12 +68,14 @@ app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
 app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
 app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
 app.use('/api/dashboard', authMiddleware, tenantIsolation, require('./routes/dashboard-fallback'));
+app.use('/api/dashboard-local', authMiddleware, require('./routes/dashboardLocal'));
 app.use('/api/products', authMiddleware, tenantIsolation, require('./routes/products/summary'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync/trigger'));
 app.use('/api/credentials', authMiddleware, tenantIsolation, require('./routes/credentials'));
 app.use('/auth', require('./routes/auth-callback'));
 app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
+app.use('/api/public', require('./routes/public-metrics')); // Rota pública temporária
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
