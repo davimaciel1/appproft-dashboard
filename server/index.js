@@ -86,6 +86,7 @@ app.use('/auth', require('./routes/auth-callback'));
 app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
 app.use('/api/public', require('./routes/public-metrics')); // Rota pública temporária
+app.use('/api/public', require('./routes/public-aggregated-metrics')); // Métricas agregadas SEM autenticação
 app.use('/api/public-db', require('./routes/database-viewer')); // Database viewer público temporário
 app.use('/db-viewer', require('./routes/database-viewer-public')); // Página HTML do banco
 app.use('/api/data-kiosk', authMiddleware, require('./routes/dataKiosk')); // Data Kiosk routes
