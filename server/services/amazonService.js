@@ -282,6 +282,85 @@ class AmazonService {
       };
     }
   }
+
+  /**
+   * Sincronizar métricas usando Data Kiosk
+   */
+  async syncDataKioskMetrics(tenantId, daysBack = 30) {
+    const dataKioskClient = require('./dataKiosk/dataKioskClient');
+    const DataKioskQueries = require('./dataKiosk/dataKioskQueries');
+    const DataKioskProcessor = require('./dataKiosk/dataKioskProcessor');
+    
+    console.log('📊 Iniciando sincronização Data Kiosk...');
+    
+    try {
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const marketplaceId = this.credentials.marketplaceId || 'A2Q3Y263D00KWC'; // Brasil
+
+      // 1. Sincronizar métricas diárias
+      console.log(`📅 Sincronizando métricas diárias: ${startDate} até ${endDate}`);
+      
+      const dailyQuery = DataKioskQueries.getDailyMetricsQuery(startDate, endDate, marketplaceId);
+      const dailyResults = await dataKioskClient.executeQuery(dailyQuery, tenantId);
+      
+      if (dailyResults.status === 'SUCCESS') {
+        await DataKioskProcessor.processDailyMetrics(dailyResults.data, tenantId);
+      }
+
+      // 2. Sincronizar métricas por ASIN
+      console.log('📦 Sincronizando métricas por produto...');
+      
+      const asinQuery = DataKioskQueries.getAsinMetricsQuery(startDate, endDate, marketplaceId);
+      const asinResults = await dataKioskClient.executeQuery(asinQuery, tenantId);
+      
+      if (asinResults.status === 'SUCCESS') {
+        await DataKioskProcessor.processAsinMetrics(asinResults.data, tenantId);
+      }
+
+      console.log('✅ Sincronização Data Kiosk concluída');
+      
+      return {
+        success: true,
+        dailyMetrics: dailyResults.status === 'SUCCESS',
+        asinMetrics: asinResults.status === 'SUCCESS'
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro na sincronização Data Kiosk:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Buscar métricas do dashboard usando Data Kiosk
+   */
+  async getDataKioskDashboardMetrics(tenantId) {
+    const DataKioskProcessor = require('./dataKiosk/dataKioskProcessor');
+    
+    try {
+      // Usar dados já processados no banco
+      const metrics = await DataKioskProcessor.calculateDashboardMetrics(tenantId);
+      return metrics;
+      
+    } catch (error) {
+      console.error('❌ Erro ao buscar métricas do dashboard:', error);
+      
+      // Fallback para métricas vazias
+      return {
+        todaysSales: 0,
+        ordersCount: 0,
+        unitsSold: 0,
+        avgUnitsPerOrder: '0',
+        netProfit: 0,
+        profitMargin: '0',
+        acos: '0',
+        yesterdayComparison: '0',
+        buyBoxPercentage: '0',
+        unitSessionPercentage: '0'
+      };
+    }
+  }
 }
 
 module.exports = AmazonService;
