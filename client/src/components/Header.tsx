@@ -37,6 +37,12 @@ const Header: React.FC = () => {
             Buy Box
           </button>
           <button 
+            onClick={() => navigate('/brand-owner')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Brand Owner
+          </button>
+          <button 
             onClick={() => navigate('/amazon-data')}
             className="text-gray-600 hover:text-gray-800 font-medium"
           >

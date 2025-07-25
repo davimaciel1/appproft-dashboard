@@ -94,6 +94,7 @@ app.use('/api/data-kiosk', authMiddleware, require('./routes/dataKiosk')); // Da
 app.use('/api/database', authMiddleware, require('./routes/database-viewer')); // Database viewer
 app.use('/api/buybox', authMiddleware, require('./routes/buyBoxDashboard')); // Buy Box Dashboard
 app.use('/api/buybox', authMiddleware, require('./routes/buyBoxSync')); // Buy Box Sync
+app.use('/api/brand-owner', autoAuthMiddleware, require('./routes/brandOwnerAPI')); // Brand Owner API
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');

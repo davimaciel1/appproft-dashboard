@@ -87,11 +87,22 @@ class BrandOwnerCompetitorService {
    */
   async addManualCompetitor(sellerId, ourAsin, competitorAsin, competitorBrand = null, level = 'direct', notes = null) {
     try {
+      // Primeiro buscar o brand_name do seller
+      const brandOwnerResult = await this.db.query(`
+        SELECT brand_name FROM brand_owners WHERE seller_id = $1 LIMIT 1
+      `, [sellerId]);
+      
+      if (brandOwnerResult.rows.length === 0) {
+        throw new Error('Brand owner não encontrado para o seller_id: ' + sellerId);
+      }
+      
+      const brandName = brandOwnerResult.rows[0].brand_name;
+      
       const result = await this.db.query(`
         SELECT add_manual_competitor($1, $2, $3, $4, $5, $6, $7)
       `, [
         sellerId,
-        null, // brand_name será obtido do registro existente
+        brandName,
         ourAsin,
         competitorAsin,
         competitorBrand || 'Unknown',

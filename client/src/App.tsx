@@ -8,6 +8,7 @@ import AggregatedMetrics from './pages/AggregatedMetrics';
 import BuyBoxDashboard from './pages/BuyBoxDashboard';
 import AmazonDataViewer from './pages/AmazonDataViewer';
 import InsightsDashboard from './pages/InsightsDashboardDirect';
+import BrandOwnerDashboard from './pages/BrandOwnerDashboard';
 import Header from './components/Header';
 import CredentialsConfig from './components/CredentialsConfig';
 
@@ -99,6 +100,15 @@ function App() {
               <Header />
               <InsightsDashboard />
             </>
+          } />
+          
+          <Route path="/brand-owner" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <BrandOwnerDashboard />
+              </>
+            ) : <Navigate to="/login" />
           } />
           
           <Route path="/" element={<Navigate to="/dashboard" />} />
