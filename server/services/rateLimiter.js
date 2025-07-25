@@ -3,7 +3,7 @@
  * Implementa token bucket algorithm para respeitar limites das APIs
  */
 
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const { executeSQL } = require('../utils/executeSQL');
 const secureLogger = require('../utils/secureLogger');
 
 class RateLimiter {

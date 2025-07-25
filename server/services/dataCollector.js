@@ -3,7 +3,7 @@
  * Coleta todos os dados possíveis das APIs Amazon e Mercado Livre
  */
 
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const { executeSQL } = require('../utils/executeSQL');
 const secureLogger = require('../utils/secureLogger');
 const tokenManager = require('./tokenManager');
 const { getRateLimiter } = require('./rateLimiter');

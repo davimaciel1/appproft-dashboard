@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const pool = require('../db/pool');
 const secureLogger = require('../utils/secureLogger');
 
 /**
@@ -17,7 +17,7 @@ router.get('/status', async (req, res) => {
     const tenantId = req.query.tenant_id || 'default';
     
     // Status atual da Buy Box por produto
-    const buyBoxStatus = await executeSQL(`
+    const buyBoxStatus = await pool.query(`
       WITH latest_tracking AS (
         SELECT DISTINCT ON (ct.asin) 
           ct.asin,
@@ -64,7 +64,7 @@ router.get('/status', async (req, res) => {
     `);
 
     // Estatísticas resumidas
-    const summary = await executeSQL(`
+    const summary = await pool.query(`
       WITH buy_box_summary AS (
         SELECT 
           COUNT(DISTINCT ct.asin) as total_products,
@@ -91,7 +91,7 @@ router.get('/status', async (req, res) => {
     `);
 
     // Mudanças recentes (últimas 2 horas)
-    const recentChanges = await executeSQL(`
+    const recentChanges = await pool.query(`
       SELECT * FROM get_buy_box_changes(2)
       ORDER BY change_time DESC
       LIMIT 10
@@ -132,7 +132,7 @@ router.get('/competitors', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const days = parseInt(req.query.days) || 30;
 
-    const competitors = await executeSQL(`
+    const competitors = await pool.query(`
       SELECT 
         ct.seller_name,
         COUNT(DISTINCT ct.asin) as products_competing,
@@ -191,7 +191,7 @@ router.get('/history/:asin', async (req, res) => {
       });
     }
 
-    const history = await executeSQL(`
+    const history = await pool.query(`
       SELECT 
         ct.timestamp,
         ct.seller_name,
@@ -210,7 +210,7 @@ router.get('/history/:asin', async (req, res) => {
     `, [asin]);
 
     // Estatísticas do produto
-    const productStats = await executeSQL(`
+    const productStats = await pool.query(`
       SELECT 
         COUNT(DISTINCT seller_name) as total_competitors,
         ROUND(AVG(price), 2) as avg_price,
@@ -265,7 +265,7 @@ router.get('/insights', async (req, res) => {
       whereClause += ` AND ai.status = '${status}'`;
     }
 
-    const insights = await executeSQL(`
+    const insights = await pool.query(`
       SELECT 
         ai.id,
         ai.asin,
@@ -296,7 +296,7 @@ router.get('/insights', async (req, res) => {
     `);
 
     // Contar insights por prioridade
-    const insightCounts = await executeSQL(`
+    const insightCounts = await pool.query(`
       SELECT 
         priority,
         COUNT(*) as count
@@ -360,7 +360,7 @@ router.post('/query', async (req, res) => {
     }
 
     // Executar query
-    const result = await executeSQL(query);
+    const result = await pool.query(query);
     
     res.json({
       status: 'success',
@@ -424,7 +424,7 @@ router.get('/summary', async (req, res) => {
       CROSS JOIN changes_today ct
     `;
 
-    const result = await executeSQL(summaryQuery);
+    const result = await pool.query(summaryQuery);
     
     res.json({
       status: 'success',
@@ -454,7 +454,7 @@ router.post('/insights/:id/apply', async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
 
-    const result = await executeSQL(`
+    const result = await pool.query(`
       UPDATE ai_insights 
       SET 
         status = 'applied',
@@ -500,7 +500,7 @@ router.get('/analytics', async (req, res) => {
     const days = parseInt(req.query.days) || 7;
 
     // Performance por dia
-    const dailyPerformance = await executeSQL(`
+    const dailyPerformance = await pool.query(`
       SELECT 
         DATE(ct.timestamp) as date,
         COUNT(DISTINCT ct.asin) as products_tracked,
@@ -522,7 +522,7 @@ router.get('/analytics', async (req, res) => {
     `);
 
     // Competidores mais agressivos
-    const topThreats = await executeSQL(`
+    const topThreats = await pool.query(`
       SELECT 
         ct.seller_name,
         COUNT(DISTINCT ct.asin) as products_attacked,
@@ -540,7 +540,7 @@ router.get('/analytics', async (req, res) => {
     `);
 
     // Produtos mais disputados
-    const contestedProducts = await executeSQL(`
+    const contestedProducts = await pool.query(`
       SELECT 
         ct.asin,
         p.name as product_name,

@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const NotificationSystem = require('../notificationSystem');
+const { getNotificationSystem } = require('../notificationSystem');
 
 class ProfitAlertSystem {
   constructor() {
@@ -7,7 +7,7 @@ class ProfitAlertSystem {
       connectionString: process.env.DATABASE_URL
     });
     
-    this.notificationSystem = new NotificationSystem();
+    this.notificationSystem = getNotificationSystem();
   }
 
   // Check and generate all types of alerts

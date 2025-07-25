@@ -133,7 +133,7 @@ router.post('/sync', async (req, res) => {
 // Get sync status
 router.get('/sync/status', async (req, res) => {
   try {
-    const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+    const { executeSQL } = require('../utils/executeSQL');
     
     const result = await executeSQL(`
       SELECT 

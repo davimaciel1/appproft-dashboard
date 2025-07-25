@@ -4,7 +4,7 @@
  */
 
 const secureLogger = require('../utils/secureLogger');
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const { executeSQL } = require('../utils/executeSQL');
 
 class AdvertisingTokenManager {
   constructor() {

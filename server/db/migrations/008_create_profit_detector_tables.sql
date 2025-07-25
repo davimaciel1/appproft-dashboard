@@ -168,6 +168,9 @@ CREATE INDEX IF NOT EXISTS idx_profit_asin_date ON profit_analysis(asin, analysi
 CREATE INDEX IF NOT EXISTS idx_profit_status ON profit_analysis(profit_status);
 CREATE INDEX IF NOT EXISTS idx_profit_margin ON profit_analysis(profit_margin);
 
+-- Add unique constraint for ON CONFLICT
+ALTER TABLE profit_analysis ADD CONSTRAINT uq_profit_analysis_asin_date UNIQUE (asin, analysis_date);
+
 -- 9. Alert system
 CREATE TABLE IF NOT EXISTS profit_alerts (
     id SERIAL PRIMARY KEY,

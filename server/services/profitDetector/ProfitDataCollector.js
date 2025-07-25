@@ -76,6 +76,14 @@ class ProfitDataCollector {
   async executeDailyCollection() {
     console.log('🚀 Starting Profit Data Collection...');
     
+    if (!this.spApi) {
+      console.log('⚠️ SP-API not available. Skipping data collection.');
+      return {
+        success: false,
+        message: 'SP-API credentials not configured'
+      };
+    }
+    
     try {
       // 1. Create all necessary reports
       const reportRequests = await this.createReports();
@@ -95,6 +103,11 @@ class ProfitDataCollector {
       await this.generateAlerts();
       
       console.log('✅ Profit Data Collection completed successfully!');
+      
+      return {
+        success: true,
+        message: 'Data collection completed'
+      };
       
     } catch (error) {
       console.error('❌ Error in profit data collection:', error);

@@ -4,7 +4,7 @@
  */
 
 require('dotenv').config();
-const { executeSQL } = require('../../DATABASE_ACCESS_CONFIG');
+const { executeSQL } = require('../utils/executeSQL');
 const { getRateLimiter } = require('./rateLimiter');
 const secureLogger = require('../utils/secureLogger');
 const OptimizedDataCollector = require('./optimizedDataCollector');
