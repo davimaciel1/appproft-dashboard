@@ -306,6 +306,10 @@ class PersistentSyncManager {
           // NOVA TAREFA: Métricas por produto Data Kiosk
           result = await this.syncDataKioskProducts(payload.tenantId || 'default', payload.daysBack || 7);
           break;
+        case 'check_competitors':
+          // NOVA TAREFA: Verificar competidores com rate limiting robusto
+          result = await this.processCompetitorCheck(task);
+          break;
         default:
           throw new Error(`Tipo de tarefa desconhecido: ${task_type}`);
       }
@@ -847,6 +851,45 @@ class PersistentSyncManager {
       daysBack,
       date
     }, priority);
+  }
+
+  /**
+   * Processar verificação de competidores com rate limiting robusto
+   */
+  async processCompetitorCheck(task) {
+    const { tenantId = 'default' } = task.data;
+    const pool = require('../db/pool');
+    
+    try {
+      // Usar o novo serviço V2 com rate limiting integrado
+      const CompetitorPricingServiceV2 = require('./amazon/competitorPricingServiceV2');
+      const amazonService = await this.getAmazonService(tenantId);
+      const competitorService = new CompetitorPricingServiceV2(amazonService, pool);
+      
+      // O novo serviço collectAllCompetitorData já gerencia rate limiting e retry
+      const result = await competitorService.collectAllCompetitorData(tenantId);
+      
+      return {
+        success: true,
+        processed: result.success,
+        errors: result.errors,
+        message: `Competidores verificados: ${result.success}/${result.products} produtos em ${result.duration?.toFixed(2)}s`,
+        details: result.details
+      };
+      
+    } catch (error) {
+      console.error('Erro no processamento de competidores:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obter instância do AmazonService
+   */
+  async getAmazonService(tenantId = 'default') {
+    const tokenManager = require('./tokenManager');
+    const AmazonService = require('./amazonService');
+    return new AmazonService(tokenManager, tenantId);
   }
 }
 

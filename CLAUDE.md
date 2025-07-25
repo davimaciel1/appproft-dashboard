@@ -11,8 +11,9 @@
 - ✅ **Database Viewer** completo
 - ✅ **Sistema Persistente** que nunca para
 - ✅ **População Automática** de todos os dados
+- ✅ **Coleta de Competidores V2** com rate limiting robusto
 
-**Data da Última Atualização**: 2025-07-25
+**Data da Última Atualização**: 2025-07-25 09:15
 
 ### 📊 STATUS ATUAL DO BANCO DE DADOS
 
@@ -39,8 +40,54 @@ node scripts/startPersistentSync.js
 - advertising_sync: Campanhas e keywords
 - check_notifications: Processamento de alertas
 - buy_box_check: Monitoramento de preços
+- check_competitors: Coleta de competidores (a cada 4h)
 ```  
 **Última Atualização**: 2025-07-25 07:30 (Sistema Funcionando + População Automática Ativa)
+
+---
+
+## 🆕 ATUALIZAÇÃO 25/07/2025 09:15: COLETA DE COMPETIDORES V2 IMPLEMENTADA ✅
+
+### 🎯 NOVA FUNCIONALIDADE: Sistema de Competidores com Rate Limiting Robusto
+
+**✅ IMPLEMENTAÇÃO COMPLETA DO SISTEMA DE COMPETIDORES:**
+
+1. **Novo Serviço V2**: `CompetitorPricingServiceV2` com:
+   - Rate limiting automático integrado
+   - Retry com backoff exponencial (até 5 tentativas)
+   - Processamento em lotes paralelos
+   - Tratamento inteligente de erros 429
+   - Logs detalhados de progresso
+
+2. **Integração com PersistentSyncManager**:
+   - Novo tipo de tarefa: `check_competitors`
+   - Execução automática a cada 4 horas
+   - Método `processCompetitorCheck` implementado
+
+3. **Scripts de Teste e Configuração**:
+   - `testCompetitorPricingV2.js` - Teste com monitoramento completo
+   - `testCompetitorPricingFinal.js` - Teste simplificado
+   - `addCompetitorSyncV2.js` - Configuração automática
+
+4. **Como Funciona**:
+   ```javascript
+   // O sistema identifica competidores REAIS através da Amazon SP-API
+   // Endpoint: /products/pricing/v0/items/{asin}/offers
+   
+   // Dados coletados para cada competidor:
+   - ID do vendedor
+   - Nome do vendedor (com cache)
+   - Preço atual
+   - Status da Buy Box
+   - Avaliações e feedback
+   - Se é FBA ou não
+   ```
+
+5. **Tabelas Utilizadas**:
+   - `competitor_tracking` - Histórico de preços e competidores
+   - `sellers_cache` - Cache de informações de vendedores
+   - `buy_box_history` - Mudanças de Buy Box ao longo do tempo
+   - `ai_insights` - Insights gerados sobre mudanças
 
 ---
 

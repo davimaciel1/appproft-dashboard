@@ -1,83 +1,139 @@
 const secureLogger = require('../../utils/secureLogger');
+const { getRateLimiter } = require('../rateLimiter');
 
 /**
- * Serviço para coleta de dados de competidores via Amazon SP-API
- * Implementa coleta de preços competitivos e identificação de vendedores
+ * Serviço aprimorado para coleta de dados de competidores via Amazon SP-API
+ * Implementa rate limiting robusto e retry exponencial
  */
-class CompetitorPricingService {
+class CompetitorPricingServiceV2 {
   constructor(amazonService, db) {
     this.amazonService = amazonService;
     this.db = db;
+    this.rateLimiter = getRateLimiter();
+    
+    // Configurações de retry
+    this.maxRetries = 5;
+    this.baseDelay = 1000; // 1 segundo
+    this.maxDelay = 60000; // 60 segundos
   }
 
   /**
-   * Coleta dados de preços competitivos para um ASIN
+   * Coleta dados de preços competitivos com retry automático
    * @param {string} asin - ASIN do produto
    * @param {string} marketplaceId - ID do marketplace
    * @returns {Object} Dados dos competidores
    */
   async getCompetitivePricing(asin, marketplaceId = null) {
-    // Usar marketplace do Brasil por padrão
     marketplaceId = marketplaceId || process.env.SP_API_MARKETPLACE_ID || 'A2Q3Y263D00KWC';
-    try {
-      const path = `/products/pricing/v0/items/${asin}/offers?MarketplaceId=${marketplaceId}&ItemCondition=New&CustomerType=Consumer`;
-      
-      secureLogger.info('Buscando preços competitivos', { asin, marketplaceId });
-      
-      let response;
+    
+    let lastError;
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        response = await this.amazonService.callSPAPI(path);
+        // Aguardar rate limit antes de fazer a chamada
+        const endpoint = `/products/pricing/v0/items/{asin}/offers`;
+        await this.rateLimiter.waitForToken('sp-api', endpoint, this.amazonService.tenantId);
+        
+        const path = `/products/pricing/v0/items/${asin}/offers?MarketplaceId=${marketplaceId}&ItemCondition=New&CustomerType=Consumer`;
+        
+        secureLogger.info('Buscando preços competitivos', { 
+          asin, 
+          marketplaceId,
+          attempt: attempt + 1 
+        });
+        
+        const response = await this.amazonService.callSPAPI(path);
+        
+        if (!response.payload) {
+          return { offers: [], summary: null };
+        }
+
+        const offers = response.payload.offers || [];
+        const summary = response.payload.summary || {};
+
+        // Processar ofertas para identificar Buy Box
+        const processedOffers = await this.processOffers(offers, asin);
+        
+        // Identificar quem tem a Buy Box
+        const buyBoxWinner = processedOffers.find(offer => offer.isBuyBoxWinner);
+        
+        const result = {
+          asin,
+          marketplaceId,
+          offers: processedOffers,
+          summary: {
+            ...summary,
+            buyBoxWinner: buyBoxWinner ? {
+              sellerId: buyBoxWinner.sellerId,
+              sellerName: buyBoxWinner.sellerName,
+              price: buyBoxWinner.price,
+              isFBA: buyBoxWinner.isFulfilledByAmazon
+            } : null,
+            totalOffers: offers.length,
+            timestamp: new Date().toISOString()
+          }
+        };
+
+        // Salvar dados no banco
+        await this.saveCompetitorData(result);
+
+        return result;
+        
       } catch (error) {
-        // Tratar erro 400 especificamente
-        if (error.message.includes('400')) {
+        lastError = error;
+        
+        // Tratamento específico de erros
+        if (error.message.includes('429')) {
+          // Rate limit - usar backoff exponencial
+          const delay = Math.min(this.baseDelay * Math.pow(2, attempt), this.maxDelay);
+          secureLogger.warn('Rate limit atingido, aguardando...', {
+            asin,
+            attempt: attempt + 1,
+            delayMs: delay,
+            error: error.message
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+          
+        } else if (error.message.includes('400')) {
+          // Produto sem competidores ou inativo
           secureLogger.warn('Produto pode não ter competidores ou não está ativo', { asin });
-          return { offers: [], summary: { message: 'Produto sem competidores ativos' } };
+          return { 
+            offers: [], 
+            summary: { 
+              message: 'Produto sem competidores ativos',
+              asin,
+              marketplaceId
+            } 
+          };
+          
+        } else if (error.message.includes('503') || error.message.includes('500')) {
+          // Erro de servidor - retry com delay menor
+          const delay = this.baseDelay * (attempt + 1);
+          secureLogger.warn('Erro de servidor, tentando novamente...', {
+            asin,
+            attempt: attempt + 1,
+            delayMs: delay
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+          
+        } else {
+          // Outros erros - não tentar novamente
+          throw error;
         }
-        throw error;
       }
-      
-      if (!response.payload) {
-        return { offers: [], summary: null };
-      }
-
-      const offers = response.payload.offers || [];
-      const summary = response.payload.summary || {};
-
-      // Processar ofertas para identificar Buy Box
-      const processedOffers = await this.processOffers(offers, asin);
-      
-      // Identificar quem tem a Buy Box
-      const buyBoxWinner = processedOffers.find(offer => offer.isBuyBoxWinner);
-      
-      const result = {
-        asin,
-        marketplaceId,
-        offers: processedOffers,
-        summary: {
-          ...summary,
-          buyBoxWinner: buyBoxWinner ? {
-            sellerId: buyBoxWinner.sellerId,
-            sellerName: buyBoxWinner.sellerName,
-            price: buyBoxWinner.price,
-            isFBA: buyBoxWinner.isFulfilledByAmazon
-          } : null,
-          totalOffers: offers.length,
-          timestamp: new Date().toISOString()
-        }
-      };
-
-      // Salvar dados no banco
-      await this.saveCompetitorData(result);
-
-      return result;
-      
-    } catch (error) {
-      secureLogger.error('Erro ao buscar preços competitivos', {
-        asin,
-        error: error.message
-      });
-      throw error;
     }
+    
+    // Se chegou aqui, esgotou as tentativas
+    secureLogger.error('Esgotadas tentativas de buscar preços competitivos', {
+      asin,
+      error: lastError.message,
+      attempts: this.maxRetries
+    });
+    
+    throw lastError;
   }
 
   /**
@@ -391,7 +447,7 @@ class CompetitorPricingService {
   }
 
   /**
-   * Coleta dados competitivos para todos os produtos ativos
+   * Coleta dados competitivos para todos os produtos ativos com rate limiting inteligente
    * @param {string} tenantId - ID do tenant
    * @returns {Object} Resultado da coleta
    */
@@ -402,6 +458,7 @@ class CompetitorPricingService {
         SELECT asin
         FROM products 
         WHERE tenant_id = $1 AND marketplace = 'amazon' AND asin IS NOT NULL AND asin != ''
+        ORDER BY RANDOM()
         LIMIT 50
       `, [tenantId]);
 
@@ -409,32 +466,65 @@ class CompetitorPricingService {
         success: 0,
         errors: 0,
         products: products.rows.length,
-        details: []
+        details: [],
+        startTime: new Date(),
+        endTime: null
       };
 
-      for (const product of products.rows) {
-        try {
-          await this.getCompetitivePricing(product.asin);
-          results.success++;
-          
-          // Aguardar para respeitar rate limits (max 10 requests/second)
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-        } catch (error) {
-          results.errors++;
-          results.details.push({
-            asin: product.asin,
-            error: error.message
-          });
-          
-          secureLogger.error('Erro ao coletar dados do produto', {
-            asin: product.asin,
-            error: error.message
-          });
+      secureLogger.info('Iniciando coleta de dados competitivos', {
+        tenantId,
+        totalProducts: products.rows.length
+      });
+
+      // Processar produtos em lotes para melhor controle
+      const batchSize = 5;
+      for (let i = 0; i < products.rows.length; i += batchSize) {
+        const batch = products.rows.slice(i, i + batchSize);
+        
+        // Processar lote em paralelo com Promise.allSettled
+        const batchPromises = batch.map(product => 
+          this.getCompetitivePricing(product.asin)
+            .then(() => ({ asin: product.asin, success: true }))
+            .catch(error => ({ asin: product.asin, success: false, error: error.message }))
+        );
+        
+        const batchResults = await Promise.allSettled(batchPromises);
+        
+        // Processar resultados do lote
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled' && result.value.success) {
+            results.success++;
+          } else {
+            results.errors++;
+            results.details.push({
+              asin: result.value?.asin || 'unknown',
+              error: result.value?.error || result.reason?.message || 'Unknown error'
+            });
+          }
         }
+        
+        // Aguardar entre lotes para evitar sobrecarga
+        if (i + batchSize < products.rows.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        // Log de progresso
+        secureLogger.info('Progresso da coleta de competidores', {
+          processed: i + batch.length,
+          total: products.rows.length,
+          successRate: `${((results.success / (i + batch.length)) * 100).toFixed(1)}%`
+        });
       }
 
-      secureLogger.info('Coleta de dados competitivos concluída', results);
+      results.endTime = new Date();
+      results.duration = (results.endTime - results.startTime) / 1000; // em segundos
+
+      secureLogger.info('Coleta de dados competitivos concluída', {
+        ...results,
+        successRate: `${((results.success / results.products) * 100).toFixed(1)}%`,
+        avgTimePerProduct: `${(results.duration / results.products).toFixed(2)}s`
+      });
+      
       return results;
       
     } catch (error) {
@@ -494,4 +584,4 @@ class CompetitorPricingService {
   }
 }
 
-module.exports = CompetitorPricingService;
+module.exports = CompetitorPricingServiceV2;
