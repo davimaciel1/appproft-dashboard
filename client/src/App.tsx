@@ -8,7 +8,9 @@ import AggregatedMetrics from './pages/AggregatedMetrics';
 import BuyBoxDashboard from './pages/BuyBoxDashboard';
 import AmazonDataViewer from './pages/AmazonDataViewer';
 import InsightsDashboard from './pages/InsightsDashboardDirect';
-import BrandOwnerDashboard from './pages/BrandOwnerDashboard';
+import BrandOwnerDashboard from './pages/BrandOwnerDashboardFixed';
+import ProfitLeakDetector from './pages/ProfitLeakDetector';
+import ProfitAnalysisDetail from './pages/ProfitAnalysisDetail';
 import Header from './components/Header';
 import CredentialsConfig from './components/CredentialsConfig';
 
@@ -107,6 +109,24 @@ function App() {
               <>
                 <Header />
                 <BrandOwnerDashboard />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/profit-detector" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <ProfitLeakDetector />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/profit-analysis/:asin" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <ProfitAnalysisDetail />
               </>
             ) : <Navigate to="/login" />
           } />

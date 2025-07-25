@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const profitDetectorService = require('../services/profitDetector');
-const { authenticateToken } = require('../middleware/auth');
-
-// Apply authentication to all routes
-router.use(authenticateToken);
+// Authentication is handled by the main server middleware
 
 // Get profit analyses with summary
 router.get('/analyses', async (req, res) => {

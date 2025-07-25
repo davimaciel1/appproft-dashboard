@@ -14,6 +14,7 @@ const hijackerAlertService = require('./hijackerAlertService');
 const dataKioskClient = require('./dataKiosk/dataKioskClient');
 const DataKioskQueries = require('./dataKiosk/dataKioskQueries');
 const DataKioskProcessor = require('./dataKiosk/dataKioskProcessor');
+const profitDetectorIntegration = require('./profitDetector/persistentSyncIntegration');
 
 class PersistentSyncManager {
   constructor() {
@@ -315,6 +316,26 @@ class PersistentSyncManager {
           // NOVA TAREFA: Monitorar competidores manuais de brand owners
           result = await this.processBrandOwnerCompetitors(task);
           break;
+        case 'profit_sync':
+          // NOVA TAREFA: Sincronização completa do Profit Detector
+          result = await profitDetectorIntegration.tasks['profit_sync'](payload);
+          break;
+        case 'profit_analyze_product':
+          // NOVA TAREFA: Analisar produto específico
+          result = await profitDetectorIntegration.tasks['profit_analyze_product'](payload);
+          break;
+        case 'profit_check_alerts':
+          // NOVA TAREFA: Verificar alertas de lucro
+          result = await profitDetectorIntegration.tasks['profit_check_alerts'](payload);
+          break;
+        case 'profit_collect_reports':
+          // NOVA TAREFA: Coletar reports para análise de lucro
+          result = await profitDetectorIntegration.tasks['profit_collect_reports'](payload);
+          break;
+        case 'profit_analyze_all':
+          // NOVA TAREFA: Analisar todos os produtos
+          result = await profitDetectorIntegration.tasks['profit_analyze_all'](payload);
+          break;
         default:
           throw new Error(`Tipo de tarefa desconhecido: ${task_type}`);
       }
@@ -437,6 +458,14 @@ class PersistentSyncManager {
         type: 'check_hijackers', 
         endpoint: '/hijackers/check', 
         priority: 4,
+        payload: { tenantId: 'default' }
+      },
+      
+      // 💸 PROFIT DETECTOR: Análise de lucro e custos ocultos
+      { 
+        type: 'profit_sync', 
+        endpoint: '/profit-detector/sync', 
+        priority: 3,
         payload: { tenantId: 'default' }
       }
       

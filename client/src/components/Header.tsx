@@ -43,6 +43,12 @@ const Header: React.FC = () => {
             Brand Owner
           </button>
           <button 
+            onClick={() => navigate('/profit-detector')}
+            className="text-gray-600 hover:text-gray-800 font-medium flex items-center gap-1"
+          >
+            <span className="text-red-500">💸</span> Profit Detector
+          </button>
+          <button 
             onClick={() => navigate('/amazon-data')}
             className="text-gray-600 hover:text-gray-800 font-medium"
           >

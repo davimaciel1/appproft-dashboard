@@ -95,6 +95,7 @@ app.use('/api/database', authMiddleware, require('./routes/database-viewer')); /
 app.use('/api/buybox', authMiddleware, require('./routes/buyBoxDashboard')); // Buy Box Dashboard
 app.use('/api/buybox', authMiddleware, require('./routes/buyBoxSync')); // Buy Box Sync
 app.use('/api/brand-owner', autoAuthMiddleware, require('./routes/brandOwnerAPI')); // Brand Owner API
+app.use('/api/profit-detector', authMiddleware, require('./routes/profitDetectorAPI')); // Profit Leak Detector
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
