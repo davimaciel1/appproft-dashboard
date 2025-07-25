@@ -41,8 +41,58 @@ node scripts/startPersistentSync.js
 - check_notifications: Processamento de alertas
 - buy_box_check: Monitoramento de preços
 - check_competitors: Coleta de competidores (a cada 4h)
+- monitor_brand_competitors: Competidores manuais (a cada 6h)
 ```  
 **Última Atualização**: 2025-07-25 07:30 (Sistema Funcionando + População Automática Ativa)
+
+---
+
+## 🆕 ATUALIZAÇÃO 25/07/2025 09:30: SISTEMA PARA BRAND OWNERS IMPLEMENTADO ✅
+
+### 🏆 NOVA FUNCIONALIDADE: Competição Manual para Brand Owners
+
+**✅ PROBLEMA RESOLVIDO:**
+Quando o seller é um brand owner vendendo produtos exclusivos, não há competidores no mesmo ASIN. Agora é possível definir manualmente quais ASINs são seus competidores diretos.
+
+**📊 ESTRUTURA IMPLEMENTADA:**
+
+1. **Novas Tabelas**:
+   - `brand_owners` - Registro de vendedores exclusivos
+   - `brand_owner_products` - Produtos do brand owner
+   - `manual_competitors` - Definição manual de competidores
+   - `competitor_monitoring` - Monitoramento de preços e rankings
+   - `brand_owner_competition_dashboard` - View consolidada
+
+2. **Novo Serviço**: `BrandOwnerCompetitorService`
+   - Permite adicionar competidores manuais entre ASINs diferentes
+   - Monitora preços, rankings, avaliações e reviews
+   - Gera insights sobre diferenças de preço
+   - Integrado ao PersistentSyncManager
+
+3. **Como Usar**:
+   ```sql
+   -- Adicionar um competidor manual
+   SELECT add_manual_competitor(
+     'SEU_SELLER_ID',          -- seller_id
+     'Sua Marca',              -- brand_name  
+     'B0ABC123',               -- seu ASIN
+     'B0XYZ789',               -- ASIN do competidor
+     'Marca Concorrente',      -- marca do competidor
+     'direct',                 -- nível de competição
+     'Principal competidor'    -- notas
+   );
+   ```
+
+4. **Monitoramento Automático**:
+   - Novo tipo de tarefa: `monitor_brand_competitors`
+   - Executa a cada 6 horas automaticamente
+   - Compara preços, rankings e avaliações
+   - Gera insights quando há diferenças significativas
+
+5. **Scripts Disponíveis**:
+   - `createBrandOwnerTables.js` - Cria estrutura no banco
+   - `exampleBrandOwnerSetup.js` - Exemplo de configuração
+   - `addBrandOwnerSync.js` - Integra ao sistema persistente
 
 ---
 

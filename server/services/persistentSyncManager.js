@@ -310,6 +310,11 @@ class PersistentSyncManager {
           // NOVA TAREFA: Verificar competidores com rate limiting robusto
           result = await this.processCompetitorCheck(task);
           break;
+
+        case 'monitor_brand_competitors':
+          // NOVA TAREFA: Monitorar competidores manuais de brand owners
+          result = await this.processBrandOwnerCompetitors(task);
+          break;
         default:
           throw new Error(`Tipo de tarefa desconhecido: ${task_type}`);
       }
@@ -886,6 +891,67 @@ class PersistentSyncManager {
   /**
    * Obter instância do AmazonService
    */
+  
+  /**
+   * Processar monitoramento de competidores de brand owners
+   */
+  async processBrandOwnerCompetitors(task) {
+    const { sellerId, tenantId = 'default' } = task.data;
+    const pool = require('../db/pool');
+    
+    try {
+      // Verificar se existe algum brand owner para monitorar
+      const brandOwners = await pool.query(`
+        SELECT DISTINCT bo.seller_id, bo.brand_name
+        FROM brand_owners bo
+        JOIN manual_competitors mc ON bo.id = mc.brand_owner_id
+        WHERE mc.is_active = true
+        ${sellerId ? 'AND bo.seller_id = $1' : ''}
+      `, sellerId ? [sellerId] : []);
+      
+      if (brandOwners.rows.length === 0) {
+        return {
+          success: true,
+          message: 'Nenhum brand owner com competidores para monitorar'
+        };
+      }
+      
+      const BrandOwnerCompetitorService = require('./brandOwnerCompetitorService');
+      const amazonService = await this.getAmazonService(tenantId);
+      const brandOwnerService = new BrandOwnerCompetitorService(amazonService, pool);
+      
+      let totalSuccess = 0;
+      let totalErrors = 0;
+      let totalInsights = 0;
+      
+      // Processar cada brand owner
+      for (const brandOwner of brandOwners.rows) {
+        try {
+          const result = await brandOwnerService.monitorAllBrandOwnerCompetitors(brandOwner.seller_id);
+          totalSuccess += result.success;
+          totalErrors += result.errors;
+          totalInsights += result.insights;
+        } catch (error) {
+          console.error(`Erro ao monitorar brand owner ${brandOwner.seller_id}:`, error);
+          totalErrors++;
+        }
+      }
+      
+      return {
+        success: true,
+        brandOwners: brandOwners.rows.length,
+        totalSuccess,
+        totalErrors,
+        totalInsights,
+        message: `Monitoramento concluído: ${totalSuccess} competidores verificados, ${totalInsights} insights gerados`
+      };
+      
+    } catch (error) {
+      console.error('Erro no processamento de brand owners:', error);
+      throw error;
+    }
+  }
+
   async getAmazonService(tenantId = 'default') {
     const tokenManager = require('./tokenManager');
     const AmazonService = require('./amazonService');
