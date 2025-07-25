@@ -83,6 +83,8 @@ class DataKioskClient {
       );
 
       const status = response.data;
+      // O campo correto é processingStatus, não status
+      status.status = status.processingStatus || status.status;
       console.log(`📊 Status da query ${queryId}:`, status.status);
       
       if (status.status === 'FAILED') {
@@ -138,6 +140,37 @@ class DataKioskClient {
         }
       });
       
+      // Os resultados vêm em formato NDJSON (newline delimited JSON)
+      const ndjsonData = response.data;
+      
+      // Se for string, processar como NDJSON
+      if (typeof ndjsonData === 'string') {
+        const lines = ndjsonData.trim().split('\n');
+        const results = [];
+        
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              results.push(JSON.parse(line));
+            } catch (e) {
+              console.warn('⚠️ Linha inválida ignorada:', line);
+            }
+          }
+        }
+        
+        console.log(`✅ ${results.length} registros processados`);
+        
+        // Retornar no formato esperado pelo processador
+        return {
+          data: {
+            analytics_salesAndTraffic_2023_11_15: {
+              salesAndTrafficByDate: results
+            }
+          }
+        };
+      }
+      
+      // Se já for objeto, retornar como está
       console.log('✅ Resultados baixados com sucesso');
       return response.data;
       
@@ -170,11 +203,12 @@ class DataKioskClient {
           throw new Error('Timeout aguardando processamento da query');
         }
         
-      } while (status.status === 'IN_PROGRESS' || status.status === 'QUEUED');
+      } while (status.status === 'IN_PROGRESS' || status.status === 'QUEUED' || status.status === 'IN_QUEUE');
       
       // 3. Baixar resultados se completo
-      if (status.status === 'COMPLETED' && status.documentId) {
-        const documentUrl = await this.getDocument(status.documentId, tenantId);
+      const documentId = status.documentId || status.dataDocumentId;
+      if ((status.status === 'COMPLETED' || status.status === 'DONE') && documentId) {
+        const documentUrl = await this.getDocument(documentId, tenantId);
         const results = await this.downloadResults(documentUrl);
         
         return {

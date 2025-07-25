@@ -244,16 +244,16 @@ class TokenManager {
         JSON.stringify(this.encryptToken(tokenData.refresh_token)) : null;
 
       await client.query(`
-        INSERT INTO marketplace_credentials (
-          user_id, marketplace, access_token, refresh_token, expires_at
-        ) VALUES (1, $1, $2, $3, $4)
-        ON CONFLICT (user_id, marketplace) 
+        INSERT INTO marketplace_tokens (
+          marketplace, tenant_id, access_token, refresh_token, expires_at
+        ) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (marketplace, tenant_id) 
         DO UPDATE SET
           access_token = EXCLUDED.access_token,
           refresh_token = EXCLUDED.refresh_token,
           expires_at = EXCLUDED.expires_at,
           updated_at = CURRENT_TIMESTAMP
-      `, [marketplace, encryptedAccessToken, encryptedRefreshToken, tokenData.expires_at]);
+      `, [marketplace, 'default', encryptedAccessToken, encryptedRefreshToken, tokenData.expires_at]);
       
       secureLogger.info('Token salvo no banco de dados', { marketplace });
       
