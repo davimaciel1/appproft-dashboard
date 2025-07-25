@@ -31,10 +31,28 @@ const Header: React.FC = () => {
             Métricas Agregadas
           </button>
           <button 
+            onClick={() => navigate('/buy-box-dashboard')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Buy Box
+          </button>
+          <button 
+            onClick={() => navigate('/amazon-data')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Dados Amazon
+          </button>
+          <button 
+            onClick={() => navigate('/insights')}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            Insights IA
+          </button>
+          <button 
             onClick={() => navigate('/database')}
             className="text-gray-600 hover:text-gray-800 font-medium"
           >
-            Banco de Dados
+            SQL Viewer
           </button>
           <button 
             onClick={() => {

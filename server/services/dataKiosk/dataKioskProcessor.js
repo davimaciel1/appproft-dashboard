@@ -41,7 +41,7 @@ class DataKioskProcessor {
             updated_at = NOW()
         `, [
           1, // user_id padrão - ajustar para multi-tenant
-          tenantId,
+          tenantId === 'default' ? 1 : parseInt(tenantId) || 1,
           'amazon',
           dayData.startDate,
           dayData.traffic?.pageViews || 0,
@@ -68,7 +68,7 @@ class DataKioskProcessor {
               updated_at = NOW()
           `, [
             1, // user_id padrão
-            tenantId,
+            tenantId === 'default' ? 1 : parseInt(tenantId) || 1,
             'amazon',
             `KIOSK-${dayData.startDate}`, // ID único para pedido agregado
             'completed',
@@ -129,7 +129,7 @@ class DataKioskProcessor {
             RETURNING id
           `, [
             1, // user_id padrão
-            tenantId,
+            tenantId === 'default' ? 1 : parseInt(tenantId) || 1,
             'amazon',
             asinData.childAsin || asinData.parentAsin,
             asinData.childAsin || asinData.parentAsin,
@@ -255,7 +255,7 @@ class DataKioskProcessor {
         WHERE o.tenant_id = $1 
           AND DATE(o.order_date) = $2
           AND o.marketplace = 'amazon'
-      `, [tenantId, dateStr]);
+      `, [tenantId === 'default' ? 1 : parseInt(tenantId) || 1, dateStr]);
 
       // Buscar métricas de ontem para comparação
       const yesterdayMetrics = await client.query(`
@@ -264,7 +264,7 @@ class DataKioskProcessor {
         WHERE tenant_id = $1 
           AND DATE(order_date) = $2
           AND marketplace = 'amazon'
-      `, [tenantId, yesterdayStr]);
+      `, [tenantId === 'default' ? 1 : parseInt(tenantId) || 1, yesterdayStr]);
 
       const today = todayMetrics.rows[0];
       const yesterday = yesterdayMetrics.rows[0];

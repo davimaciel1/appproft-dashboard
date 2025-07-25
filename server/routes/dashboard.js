@@ -396,4 +396,34 @@ function calculateROI(product) {
   return ((revenue - cost) / cost * 100).toFixed(1);
 }
 
+// Rota para database query (usado pelo InsightsDashboard)
+router.post('/database/query', async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({ error: 'Query é obrigatória' });
+    }
+    
+    // Verificar se é uma query SELECT apenas (segurança)
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery.startsWith('select')) {
+      return res.status(403).json({ error: 'Apenas queries SELECT são permitidas' });
+    }
+    
+    const result = await pool.query(query);
+    
+    res.json({
+      rows: result.rows,
+      rowCount: result.rowCount
+    });
+  } catch (error) {
+    secureLogger.error('Erro ao executar query', { 
+      error: error.message,
+      query: req.body.query?.substring(0, 100) // Log apenas parte da query
+    });
+    res.status(500).json({ error: 'Erro ao executar query' });
+  }
+});
+
 module.exports = router;

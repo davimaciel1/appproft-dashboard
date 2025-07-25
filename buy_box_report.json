@@ -1,0 +1,500 @@
+{
+  "date": "2025-07-25T01:34:20.146Z",
+  "statistics": {
+    "total": 69,
+    "processed": 69,
+    "withBuyBox": 2,
+    "withoutBuyBox": 67,
+    "errors": 0,
+    "buyBoxWinners": [
+      {
+        "asin": "B0C59YJM4Y",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C59YL99C",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C59YRK6W",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B1QXZ5",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B45D37",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B4GMLT",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B4R4F7",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B6GSZ4",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B6XJ1C",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B75CDK",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B7MVNJ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B8GF5M",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B8K1Y2",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B8RH17",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B8RH1V",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B8W2KM",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B9B3SN",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B9B3SQ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B9HBDX",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5B9HBDZ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BBCRZQ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BC5S4R",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BC8JTQ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BCDWTQ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BCMH2J",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BFL6YN",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BFNP74",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BFV14F",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BFY8VH",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BG5T48",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BG7FBV",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BHYT2N",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BJ2B1Q",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BJ2P4F",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BNBBMF",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BNC3PG",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BNC3PH",
+        "productName": "Slipperland Cloud Pillow Slides for Women and Men - Luxuriously Comfy & Foot Pain Relieving | Non-Slip, Quick-Drying, Thick Sole | For Indoor, Beach & Pool, Black, 10.5-11.5 Women/9-10 Men",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BQ1D3B",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BQ3G4Y",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BS34YQ",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BSBRY3",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BSC2PK",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BTQLK8",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BV7XQK",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5BX2339",
+        "productName": "Slipperland Genuine Pillow Slippers for Women & Men | Foot Pain Relieving | Non-Slip, Quick Drying House & Shower Slides | Ultra-Cushioned & Extremely Comfy | Thick Sole",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5V17771",
+        "productName": "Cuttero 8\" Valley Chef Knife - Culinary Cooking Carbon Ergonomic 430 Wood Handle for Women & Men, Ultra-Sharp Kitchen Knife for Cutting, Chopping, Dicing, Mincing & Slicing",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5W9HBR7",
+        "productName": "Cuttero Mastery Series - 8 Inch Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WBF1MP",
+        "productName": "Cuttero 8\" Horizon Chef Knife - Culinary Cooking Carbon Stainless Steel Green Resin Handle for Women & Men, Ultra-Sharp Kitchen Knife for Cutting, Chopping,Dicing & Slicing (Green)",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WC13ZD",
+        "productName": "Cuttero Mastery Series - 8 Inch Blue Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WJPWQF",
+        "productName": "Cuttero Mastery Series - 8 Inch Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WSYPMJ",
+        "productName": "Cuttero Mastery Series - 8 Inch Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WT16J2",
+        "productName": "Cuttero Mastery Series - 8 Inch Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WTCN8B",
+        "productName": "Cuttero 8\" Sand Chef Knife - Culinary Cooking Carbon Stainless Steel Handle for Women & Men, Ultra-Sharp Kitchen Knife for Cutting, Chopping, Dicing & Slicing (Wood Color)",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WTGGFV",
+        "productName": "Cuttero 8\" Canyon Chef Knife - Culinary Cooking Carbon Ergonomic Red Wood Handle for Women & Men, Ultra-Sharp Kitchen Knife for Cutting, Chopping, Dicing, Mincing & Slicing",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WTZJ1T",
+        "productName": "Cuttero Mastery Series - 8 Inch Japanese Chef Knife | Ultra-Sharp High Carbon Stainless Steel | Ergonomic Handle | Stylish & Professional Choice for Chefs & Home Cooks | Perfect 2023 Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5WWN1X3",
+        "productName": "Cuttero 8\" Thunder Chef Knife - Culinary Cooking Carbon Stainless Steel Resin Handle for Women & Men, Ultra-Sharp Kitchen Knife for Cutting, Chopping, Dicing & Slicing (Black)",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0C5ZZQGM1",
+        "productName": "Cuttero Butane Torch Lighter, Refillable Kitchen Cooking Windproof Adjustable Flame Upto 1300 C Blow Torch W/Safety Lock for Fireworks, Candles, Grill BBQ, Cooking & Baking (Gas Not Included) - Brown",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CHXHY4F4",
+        "productName": "Cuttero Professional Kitchen Knife Sharpener",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CHXS43MR",
+        "productName": "Cuttero Kitchen Knife Sharpener, Chainsaw Knife Sharpening W/Scissor Sharpener, Chef Knife & Blade Sharpeners for Kitchen Knives, Helps Repair, Restore, Polish Blades (Knife & Scissor)",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CJLGXXLT",
+        "productName": "Petyz Pet Hair Remover and Reusable Lint Roller - Cat and Dog Hair Remover for Furniture, Couch, Carpet, Car Seats, Clothing and Bedding - Portable, Multi-Surface Fur Removal Tool",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 1
+      },
+      {
+        "asin": "B0CLB8C9T8",
+        "productName": "Cuttero Knife Set, Premium 15-Piece Knife Collection with Integrated Sharpening Block, Durable Stainless Steel, Sleek Black Finish, Dishwasher Friendly",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CLBFSQH1",
+        "productName": "Cutting Boards for Kitchen - Bamboo Cutting Board Set of 4, Cutting Boards w/Juice Grooves, Thick Chopping Board for Meat, Veggies, Easy Grip Handle - Kitchen Gadgets Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CLBHB46K",
+        "productName": "Cutting Boards for Kitchen - Bamboo Cutting Board Set of 3, Cutting Boards w/Juice Grooves, Thick Chopping Board for Meat, Veggies, Easy Grip Handle - Kitchen Gadgets Gift",
+        "weHaveBuyBox": true,
+        "buyBoxWinner": "A27IMS7TINM85N",
+        "ourPrice": 29.45,
+        "buyBoxPrice": 29.45,
+        "totalOffers": 1
+      },
+      {
+        "asin": "B0CLBHN3KD",
+        "productName": "Cutting Boards for Kitchen - Bamboo Cutting Board, Cutting Boards w/Juice Grooves, Thick Chopping Board for Meat, Veggies, Easy Grip Handle - Kitchen Gadgets Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CLBR3ZCN",
+        "productName": "Cutting Boards for Kitchen - Bamboo Cutting Board Set of 2, Cutting Boards w/Juice Grooves, Thick Chopping Board for Meat, Veggies, Easy Grip Handle - Kitchen Gadgets Gift",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CMX1W1BB",
+        "productName": "Cuttero Japanese Damascus Chef Knife, 8 inch Kitchen Knife 67 Layers Damascus Steel VG-10 Gyuto Meat Knife, Professional Sharp High Carbon Cutting Chefs Knife Resin and Maple Wood Handle, DMS-127A",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CMYRMWVV",
+        "productName": "Cuttero 5\" Cleaver Knife, Wood Handle Heavy Duty Forged, Handmade Chef Meat Cleaver, Kitchen Knives, Butcher, with Leather Sheath,Take Carrying, Valentines Day Gifts for Him",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CMYRY1QC",
+        "productName": "Cuttero 10 PCS Set Horizon Slicing Santoku Tool Kitchen Chef Knives Green",
+        "weHaveBuyBox": false,
+        "buyBoxWinner": "Nenhum",
+        "totalOffers": 0
+      },
+      {
+        "asin": "B0CMYYZY2Q",
+        "productName": "Cuttero Signature 7-Inch Chef Knife",
+        "weHaveBuyBox": true,
+        "buyBoxWinner": "A27IMS7TINM85N",
+        "ourPrice": 45.99,
+        "buyBoxPrice": 45.99,
+        "totalOffers": 1
+      }
+    ]
+  },
+  "timestamp": "24/07/2025, 22:34:20"
+}

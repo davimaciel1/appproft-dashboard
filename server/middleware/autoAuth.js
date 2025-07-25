@@ -37,6 +37,7 @@ module.exports = async (req, res, next) => {
     
   } catch (error) {
     console.error('Erro no middleware de auto-auth:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({ error: 'Erro interno de autenticação' });
   }
 };

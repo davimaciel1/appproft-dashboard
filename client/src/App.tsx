@@ -5,6 +5,9 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import DatabaseViewer from './pages/DatabaseViewer';
 import AggregatedMetrics from './pages/AggregatedMetrics';
+import BuyBoxDashboard from './pages/BuyBoxDashboard';
+import AmazonDataViewer from './pages/AmazonDataViewer';
+import InsightsDashboard from './pages/InsightsDashboardDirect';
 import Header from './components/Header';
 import CredentialsConfig from './components/CredentialsConfig';
 
@@ -71,6 +74,31 @@ function App() {
                 <AggregatedMetrics />
               </>
             ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/buy-box-dashboard" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <BuyBoxDashboard />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/amazon-data" element={
+            isAuthenticated ? (
+              <>
+                <Header />
+                <AmazonDataViewer />
+              </>
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/insights" element={
+            <>
+              <Header />
+              <InsightsDashboard />
+            </>
           } />
           
           <Route path="/" element={<Navigate to="/dashboard" />} />

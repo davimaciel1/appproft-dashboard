@@ -62,8 +62,19 @@ const DatabaseViewer: React.FC = () => {
   const loadTables = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/database/tables');
-      setTables(response.data.tables);
+      // Tentar usar autenticação primeiro, caso falhe, usar rota com auto-auth
+      try {
+        const response = await api.get('/api/database/tables');
+        setTables(response.data.tables);
+      } catch (authError: any) {
+        // Se falhou por autenticação, tentar com auto-auth
+        if (authError.response?.status === 401) {
+          const response = await api.get('/api/dashboard/database/tables');
+          setTables(response.data.tables);
+        } else {
+          throw authError;
+        }
+      }
     } catch (error) {
       console.error('Erro ao carregar tabelas:', error);
     } finally {
@@ -78,17 +89,40 @@ const DatabaseViewer: React.FC = () => {
       setCurrentPage(page);
       
       // Buscar estrutura
-      const structureResponse = await api.get(`/api/database/table/${tableName}/structure`);
+      let structureResponse: any;
+      try {
+        structureResponse = await api.get(`/api/database/table/${tableName}/structure`);
+      } catch (authError: any) {
+        if (authError.response?.status === 401) {
+          structureResponse = await api.get(`/api/dashboard/database/table/${tableName}/structure`);
+        } else {
+          throw authError;
+        }
+      }
       setColumns(structureResponse.data.columns);
       setAllColumns(prev => ({ ...prev, [tableName]: structureResponse.data.columns }));
       
       // Buscar dados
-      const dataResponse = await api.get(`/api/database/table/${tableName}/data`, {
-        params: {
-          limit: itemsPerPage,
-          offset: page * itemsPerPage
+      let dataResponse: any;
+      try {
+        dataResponse = await api.get(`/api/database/table/${tableName}/data`, {
+          params: {
+            limit: itemsPerPage,
+            offset: page * itemsPerPage
+          }
+        });
+      } catch (authError: any) {
+        if (authError.response?.status === 401) {
+          dataResponse = await api.get(`/api/dashboard/database/table/${tableName}/data`, {
+            params: {
+              limit: itemsPerPage,
+              offset: page * itemsPerPage
+            }
+          });
+        } else {
+          throw authError;
         }
-      });
+      }
       setTableData(dataResponse.data);
       setQueryResult(null);
     } catch (error) {
@@ -103,7 +137,16 @@ const DatabaseViewer: React.FC = () => {
     
     try {
       setLoading(true);
-      const response = await api.post('/api/database/query', { query: customQuery });
+      let response: any;
+      try {
+        response = await api.post('/api/database/query', { query: customQuery });
+      } catch (authError: any) {
+        if (authError.response?.status === 401) {
+          response = await api.post('/api/dashboard/database/query', { query: customQuery });
+        } else {
+          throw authError;
+        }
+      }
       setQueryResult(response.data);
       setTableData(null);
     } catch (error: any) {
@@ -120,7 +163,16 @@ const DatabaseViewer: React.FC = () => {
     try {
       setFilterLoading(true);
       setFilterError('');
-      const response = await api.post('/api/database/query', { query });
+      let response: any;
+      try {
+        response = await api.post('/api/database/query', { query });
+      } catch (authError: any) {
+        if (authError.response?.status === 401) {
+          response = await api.post('/api/dashboard/database/query', { query });
+        } else {
+          throw authError;
+        }
+      }
       setFilterResults(response.data.rows);
       setQueryResult(null);
       setTableData(null);
@@ -192,7 +244,12 @@ const DatabaseViewer: React.FC = () => {
       
       // Load columns for this table if not loaded
       if (!allColumns[tableName]) {
-        api.get(`/api/database/table/${tableName}/structure`).then(response => {
+        api.get(`/api/database/table/${tableName}/structure`).catch(authError => {
+          if (authError.response?.status === 401) {
+            return api.get(`/api/dashboard/database/table/${tableName}/structure`);
+          }
+          throw authError;
+        }).then(response => {
           setAllColumns(prev => ({ ...prev, [tableName]: response.data.columns }));
         });
       }

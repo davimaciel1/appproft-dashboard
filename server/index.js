@@ -79,6 +79,7 @@ app.use('/api/marketplace', require('./routes/mercadolivre-callback'));
 app.use('/api/amazon', authMiddleware, tenantIsolation, require('./routes/amazon'));
 app.use('/api/mercadolivre', authMiddleware, tenantIsolation, require('./routes/mercadolivre'));
 app.use('/api/dashboard', autoAuthMiddleware, tenantIsolation, require('./routes/dashboard-fallback'));
+app.use('/api/dashboard/database', autoAuthMiddleware, tenantIsolation, require('./routes/dashboard-database'));
 app.use('/api/dashboard-local', authMiddleware, require('./routes/dashboardLocal'));
 app.use('/api/products', authMiddleware, tenantIsolation, require('./routes/products/summary'));
 app.use('/api/sync', authMiddleware, tenantIsolation, require('./routes/sync/trigger'));
@@ -87,13 +88,16 @@ app.use('/auth', require('./routes/auth-callback'));
 app.use('/auth', require('./routes/oauth-debug'));
 app.use('/api/lwa', require('./routes/lwa-check'));
 app.use('/api/public', require('./routes/public-metrics')); // Rota pública temporária
-app.use('/api/public-db', require('./routes/database-viewer')); // Database viewer público temporário
+// app.use('/api/public-db', require('./routes/database-viewer-api')); // Removido por segurança
 app.use('/db-viewer', require('./routes/database-viewer-public')); // Página HTML do banco
 app.use('/api/data-kiosk', authMiddleware, require('./routes/dataKiosk')); // Data Kiosk routes
 app.use('/api/database', authMiddleware, require('./routes/database-viewer')); // Database viewer
+app.use('/api/buybox', authMiddleware, require('./routes/buyBoxDashboard')); // Buy Box Dashboard
+app.use('/api/buybox', authMiddleware, require('./routes/buyBoxSync')); // Buy Box Sync
 
 const notificationService = require('./services/notificationService');
 const tokenManager = require('./services/tokenManager');
+const schedulerService = require('./services/schedulerService');
 
 io.on('connection', (socket) => {
   console.log('Novo cliente conectado');
@@ -129,6 +133,14 @@ server.listen(PORT, async () => {
     secureLogger.error('Erro na migração automática', { error: error.message });
   }
   
+  // Iniciar serviço de agendamento automático
+  try {
+    await schedulerService.start();
+    secureLogger.info('✅ Sincronização automática de Buy Box ativada');
+  } catch (error) {
+    secureLogger.error('Erro ao iniciar scheduler', { error: error.message });
+  }
+  
   // Sistema de renovação automática de tokens
   tokenRenewalService.startAutoRenewal();
   secureLogger.info('Sistema de renovação automática de tokens iniciado');
@@ -143,6 +155,33 @@ server.listen(PORT, async () => {
     secureLogger.error('Erro ao iniciar worker de sincronização', { error: error.message });
     console.error('❌ Erro ao iniciar worker:', error.message);
   }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  secureLogger.info('SIGTERM recebido, encerrando servidor...');
+  
+  // Parar scheduler
+  schedulerService.stop();
+  
+  // Fechar servidor
+  server.close(() => {
+    secureLogger.info('Servidor encerrado');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  secureLogger.info('SIGINT recebido, encerrando servidor...');
+  
+  // Parar scheduler
+  schedulerService.stop();
+  
+  // Fechar servidor
+  server.close(() => {
+    secureLogger.info('Servidor encerrado');
+    process.exit(0);
+  });
 });
 
 module.exports = { io };
